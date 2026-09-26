@@ -1,7 +1,8 @@
 use crate::download::{download_file, get_download_info};
 use crate::errors::{DownloadError, Error};
-use crate::types::{DownloadFinished, SpineAssetData};
+use crate::types::{AudioAsset, DownloadFinished, SpineAssetData};
 use crate::utils::{detect_folder_type, file_to_data_uri};
+use base64::{engine::general_purpose::STANDARD, Engine as _};
 use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -72,6 +73,93 @@ pub fn get_spine_assets(folder_path: String) -> Result<SpineAssetData, Error> {
         atlas_filename,
         raw_data,
     })
+}
+
+#[tauri::command]
+pub fn list_audio_files(folder_path: String) -> Result<Vec<AudioAsset>, String> {
+    let root = fs::canonicalize(&folder_path)
+        .map_err(|error| format!("Could not open audio folder: {error}"))?;
+    if !root.is_dir() {
+        return Err("The selected audio path is not a folder.".to_string());
+    }
+
+    let mut assets = Vec::new();
+    collect_audio_files(&root, &root, &mut assets);
+    assets.sort_by_key(|asset| asset.relative_path.to_lowercase());
+    Ok(assets)
+}
+
+#[tauri::command]
+pub fn read_audio_file(folder_path: String, relative_path: String) -> Result<String, String> {
+    let root = fs::canonicalize(&folder_path)
+        .map_err(|error| format!("Could not open audio folder: {error}"))?;
+    let path = fs::canonicalize(root.join(&relative_path))
+        .map_err(|error| format!("Could not open audio file: {error}"))?;
+
+    if !path.starts_with(&root) {
+        return Err("The audio file must be inside the selected audio folder.".to_string());
+    }
+
+    let mime_type = match path.extension().and_then(|extension| extension.to_str()) {
+        Some(extension) if extension.eq_ignore_ascii_case("ogg") => "audio/ogg",
+        Some(extension) if extension.eq_ignore_ascii_case("mp3") => "audio/mpeg",
+        Some(extension) if extension.eq_ignore_ascii_case("wav") => "audio/wav",
+        _ => return Err("Only OGG, MP3, and WAV audio files are supported.".to_string()),
+    };
+
+    let metadata = fs::metadata(&path).map_err(|error| format!("Could not inspect audio file: {error}"))?;
+    const MAX_AUDIO_FILE_SIZE: u64 = 64 * 1024 * 1024;
+    if metadata.len() > MAX_AUDIO_FILE_SIZE {
+        return Err("Audio files larger than 64 MB are not supported.".to_string());
+    }
+
+    let bytes = fs::read(&path).map_err(|error| format!("Could not read audio file: {error}"))?;
+    Ok(format!("data:{mime_type};base64,{}", STANDARD.encode(bytes)))
+}
+
+fn collect_audio_files(root: &Path, current: &Path, assets: &mut Vec<AudioAsset>) {
+    let Ok(entries) = fs::read_dir(current) else {
+        return;
+    };
+
+    for entry in entries.flatten() {
+        let path = entry.path();
+        let Ok(file_type) = entry.file_type() else {
+            continue;
+        };
+
+        if file_type.is_dir() {
+            collect_audio_files(root, &path, assets);
+            continue;
+        }
+        if !file_type.is_file() {
+            continue;
+        }
+
+        let supported = path
+            .extension()
+            .and_then(|extension| extension.to_str())
+            .is_some_and(|extension| {
+                extension.eq_ignore_ascii_case("ogg")
+                    || extension.eq_ignore_ascii_case("mp3")
+                    || extension.eq_ignore_ascii_case("wav")
+            });
+        if !supported {
+            continue;
+        }
+
+        let Ok(relative_path) = path.strip_prefix(root) else {
+            continue;
+        };
+        let Some(file_name) = path.file_name() else {
+            continue;
+        };
+
+        assets.push(AudioAsset {
+            relative_path: relative_path.to_string_lossy().replace('\\', "/"),
+            file_name: file_name.to_string_lossy().into_owned(),
+        });
+    }
 }
 
 #[tauri::command]

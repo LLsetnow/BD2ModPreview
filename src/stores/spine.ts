@@ -1,6 +1,6 @@
 import { readonly, ref } from "vue";
 import { defineStore } from "pinia";
-import { SpineSource } from "../types/spine";
+import { AudioAsset, SpineSource } from "../types/spine";
 
 // interface AnimationQueueItem {
 //     animation: string;
@@ -16,6 +16,10 @@ export const useSpineStore = defineStore('spine', () => {
     const backgroundImage = ref<string | null>(null)
 
     const animationTrigger = ref(0); // to trigger the same animation 
+
+    const audioFolder = ref<string | null>(null);
+    const audioAssets = ref<AudioAsset[]>([]);
+    const sequenceAudioPath = ref<string | null>(null);
 
     const allAnimations = ref<string[]>([]);
     const currentAnimation = ref<string | null>(null)
@@ -57,6 +61,16 @@ export const useSpineStore = defineStore('spine', () => {
         currentAnimation.value = animation
         // triggerRef(currentAnimation)
         animationTrigger.value += 1;
+    }
+
+    const setAudioFolder = (folderPath: string | null) => {
+        audioFolder.value = folderPath;
+        audioAssets.value = [];
+        sequenceAudioPath.value = null;
+    }
+
+    const setAudioAssets = (assets: AudioAsset[]) => {
+        audioAssets.value = assets;
     }
 
     const playAllAnimations = () => {
@@ -134,6 +148,9 @@ export const useSpineStore = defineStore('spine', () => {
         animations: readonly(allAnimations),
         currentAnimation,
         animationTrigger,
+        audioFolder,
+        audioAssets: readonly(audioAssets),
+        sequenceAudioPath,
         // animationQueue: animationQueue,
         // playQueue: readonly(playQueue),
 
@@ -144,6 +161,8 @@ export const useSpineStore = defineStore('spine', () => {
 
         setAnimations,
         setCurrentAnimation,
+        setAudioFolder,
+        setAudioAssets,
         playAllAnimations,
 
         // addAnimationToQueue,

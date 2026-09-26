@@ -53,7 +53,9 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
             get_spine_assets,
-            download_missing_skeleton
+            download_missing_skeleton,
+            list_audio_files,
+            read_audio_file
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

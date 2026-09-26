@@ -65,7 +65,17 @@ const messages = {
                 title: "Animations",
                 available: "{count} available",
                 loopAnimation: "Loop Animation",
-                noAnimations: "No animations available"
+                noAnimations: "No animations available",
+                fullSkillSequence: "Play Full Skill"
+            },
+            audio: {
+                title: "Audio",
+                chooseFolder: "Choose Audio Folder",
+                changeFolder: "Change Audio Folder",
+                filesFound: "{count} audio files found",
+                sequenceTrack: "Full-sequence audio (optional)",
+                autoMatch: "Auto match animation/events",
+                help: "Load extracted OGG, MP3, or WAV files. Auto mode matches Spine event or animation names; a selected file plays once with the full sequence."
             },
             actions: {
                 title: "Actions",
@@ -216,7 +226,17 @@ const messages = {
                 title: "动画",
                 available: "可用 {count} 个",
                 loopAnimation: "循环动画",
-                noAnimations: "无可用动画"
+                noAnimations: "无可用动画",
+                fullSkillSequence: "完整播放技能",
+            },
+            audio: {
+                title: "音频",
+                chooseFolder: "选择音频文件夹",
+                changeFolder: "更换音频文件夹",
+                filesFound: "找到 {count} 个音频文件",
+                sequenceTrack: "完整序列音频（可选）",
+                autoMatch: "自动匹配动画/事件",
+                help: "选择已提取的 OGG、MP3 或 WAV 文件夹。自动模式按 Spine 事件名或动画名匹配；选定文件会在完整序列开始时播放一次。"
             },
             actions: {
                 title: "操作",
@@ -367,7 +387,17 @@ const messages = {
                 title: "アニメーション",
                 available: "{count}個利用可能",
                 loopAnimation: "アニメーションをループ",
-                noAnimations: "利用可能なアニメーションがありません"
+                noAnimations: "利用可能なアニメーションがありません",
+                fullSkillSequence: "スキル全体を再生"
+            },
+            audio: {
+                title: "音声",
+                chooseFolder: "音声フォルダーを選択",
+                changeFolder: "音声フォルダーを変更",
+                filesFound: "{count}個の音声ファイル",
+                sequenceTrack: "シーケンス全体の音声（任意）",
+                autoMatch: "アニメーション/イベントに自動で一致",
+                help: "展開済みのOGG、MP3、WAVファイルを読み込みます。自動モードではSpineイベント名またはアニメーション名で一致させ、選択したファイルはシーケンス開始時に1回再生します。"
             },
             actions: {
                 title: "アクション",
@@ -518,7 +548,17 @@ const messages = {
                 title: "애니메이션",
                 available: "{count}개 사용 가능",
                 loopAnimation: "애니메이션 반복",
-                noAnimations: "사용 가능한 애니메이션이 없습니다"
+                noAnimations: "사용 가능한 애니메이션이 없습니다",
+                fullSkillSequence: "스킬 전체 재생"
+            },
+            audio: {
+                title: "오디오",
+                chooseFolder: "오디오 폴더 선택",
+                changeFolder: "오디오 폴더 변경",
+                filesFound: "오디오 파일 {count}개",
+                sequenceTrack: "전체 시퀀스 오디오(선택 사항)",
+                autoMatch: "애니메이션/이벤트 자동 매칭",
+                help: "추출한 OGG, MP3, WAV 파일을 불러옵니다. 자동 모드는 Spine 이벤트명 또는 애니메이션명과 일치시키며, 선택한 파일은 전체 시퀀스 시작 시 한 번 재생합니다."
             },
             actions: {
                 title: "작업",

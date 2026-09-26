@@ -8,9 +8,11 @@ import {
 import { onMounted, ref, computed, watch } from 'vue';
 import { getVersion } from '@tauri-apps/api/app';
 import { getCurrentWindow } from '@tauri-apps/api/window';
+import { open } from '@tauri-apps/plugin-dialog';
 
 import { useSpineStore } from "../../stores/spine"
 import { useUIStore } from '../../stores/ui';
+import { FULL_SKILL_SEQUENCE } from '../../types/spine';
 
 const uiStore = useUIStore();
 const spineStore = useSpineStore()
@@ -46,8 +48,8 @@ function handleBackgroundImageChange(event: Event) {
 }
 
 function selectAnimation(animation: string) {
-    if (animation === 'All') {
-        spineStore.setCurrentAnimation('All');
+    if (animation === FULL_SKILL_SEQUENCE) {
+        spineStore.setCurrentAnimation(FULL_SKILL_SEQUENCE);
         spineStore.playAllAnimations();
     } else {
         spineStore.setCurrentAnimation(animation);
@@ -60,10 +62,8 @@ const animationsWithCombined = computed(() => {
     if (!spineStore.animations || spineStore.animations.length === 0) {
         return [];
     }
-    if (spineStore.animations.length <= 1) {
-        return spineStore.animations;
-    }
-    return [...spineStore.animations, 'All'];
+    if (spineStore.animations.includes(FULL_SKILL_SEQUENCE)) return spineStore.animations;
+    return [...spineStore.animations, FULL_SKILL_SEQUENCE];
 });
 
 watch(
@@ -105,6 +105,33 @@ const displayLanguages = {
 import { useI18n } from 'vue-i18n';
 
 const { t, availableLocales, locale } = useI18n();
+
+const audioFolderName = computed(() => {
+    if (!spineStore.audioFolder) return '';
+    const parts = spineStore.audioFolder.split(/[/\\]/);
+    return parts.pop() || spineStore.audioFolder;
+});
+
+function animationLabel(animation: string | null): string {
+    if (animation === FULL_SKILL_SEQUENCE) return t('controls.animations.fullSkillSequence');
+    return animation || '';
+}
+
+async function openAudioFolderDialog(): Promise<void> {
+    try {
+        const selectedPath = await open({
+            directory: true,
+            multiple: false,
+            title: t('controls.audio.chooseFolder')
+        });
+
+        if (typeof selectedPath === 'string' && selectedPath) {
+            spineStore.setAudioFolder(selectedPath);
+        }
+    } catch (error) {
+        console.error('Error selecting audio folder:', error);
+    }
+}
 
 watch(locale, (newLocale) => {
     uiStore.setLanguage(newLocale);
@@ -273,7 +300,7 @@ watch(locale, (newLocale) => {
                                 <ListboxButton
                                     class="w-full rounded-xl border border-slate-700/50 bg-slate-800/50 p-3 hover:pl-4 cursor-pointer text-sm font-medium text-slate-200 transition-all duration-200 hover:border-slate-600 hover:bg-slate-700/50 focus:border-slate-500 focus:bg-slate-700/60 focus:outline-none focus:ring-1 focus:ring-slate-600 text-left flex items-center justify-between">
                                     <span>
-                                        {{ spineStore.currentAnimation }}
+                                        {{ animationLabel(spineStore.currentAnimation) }}
                                     </span>
                                     <svg class="w-6 h-6 text-slate-400 transition-transform ui-open:rotate-180"
                                         xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor">
@@ -301,7 +328,7 @@ watch(locale, (newLocale) => {
                                                         selected ? 'font-semibold text-slate-100' : 'font-normal text-slate-400',
                                                         'block truncate'
                                                     ]">
-                                                        {{ anim }}
+                                                        {{ animationLabel(anim) }}
                                                     </span>
                                                     <span v-if="selected"
                                                         class="absolute inset-y-0 right-2 flex items-center text-slate-400">
@@ -320,6 +347,27 @@ watch(locale, (newLocale) => {
                             </div>
                         </Listbox>
                     </div>
+                </div>
+
+                <div class="space-y-2 border-t border-slate-700/60 pt-4">
+                    <h5 class="text-sm font-medium text-slate-300">{{ t('controls.audio.title') }}</h5>
+                    <button @click="openAudioFolderDialog"
+                        class="w-full rounded-lg bg-slate-700 px-3 py-2 text-left text-sm text-slate-200 hover:bg-slate-600 transition-colors cursor-pointer">
+                        {{ spineStore.audioFolder ? t('controls.audio.changeFolder') : t('controls.audio.chooseFolder') }}
+                    </button>
+                    <p v-if="spineStore.audioFolder" class="truncate text-xs text-slate-500" :title="spineStore.audioFolder">
+                        {{ audioFolderName }} · {{ t('controls.audio.filesFound', { count: spineStore.audioAssets.length }) }}
+                    </p>
+                    <label class="block text-xs text-slate-400">{{ t('controls.audio.sequenceTrack') }}</label>
+                    <select v-model="spineStore.sequenceAudioPath"
+                        :disabled="spineStore.audioAssets.length === 0"
+                        class="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-200 disabled:cursor-not-allowed disabled:opacity-50">
+                        <option :value="null">{{ t('controls.audio.autoMatch') }}</option>
+                        <option v-for="asset in spineStore.audioAssets" :key="asset.relativePath" :value="asset.relativePath">
+                            {{ asset.relativePath }}
+                        </option>
+                    </select>
+                    <p class="text-xs leading-relaxed text-slate-500">{{ t('controls.audio.help') }}</p>
                 </div>
             </div>
 

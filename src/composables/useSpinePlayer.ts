@@ -7,7 +7,7 @@ import { useCharactersStore } from "../stores/characters";
 
 import { useLogger } from "./useLogger";
 
-import { SpineSource } from "../types/spine";
+import { AudioAsset, FULL_SKILL_SEQUENCE, SpineSource } from "../types/spine";
 
 import { BD2ModDetector } from "../utils/spineAssetDetector";
 import { useSpineStore } from "../stores/spine";
@@ -109,6 +109,12 @@ export function useSpinePlayer(playerContainer: Ref<HTMLElement | null>) {
     let currentAnimationIndex = 0;
     let isAllAnimationsMode = false;
     let cutAnimationsCache: string[] = [];  // Cache the filtered animations
+    let audioStateListener: any = null;
+    let activeAudio: HTMLAudioElement | null = null;
+    let audioPlaybackToken = 0;
+    let audioScanToken = 0;
+    let isManualSequenceAudio = false;
+    const audioDataCache = new Map<string, string>();
 
     const defaultCameraState: CameraState = {
         x: 0,
@@ -456,9 +462,15 @@ export function useSpinePlayer(playerContainer: Ref<HTMLElement | null>) {
         isAllAnimationsMode = false;
         currentAnimationIndex = 0;
         cutAnimationsCache = [];
+        isManualSequenceAudio = false;
+        stopActiveAudio();
 
         if (playerInstance) {
             try {
+                if (audioStateListener) {
+                    playerInstance.animationState?.removeListener?.(audioStateListener);
+                    audioStateListener = null;
+                }
                 playerInstance.dispose();
             } catch (error) {
                 logMessage(`Error disposing player: ${error}`, "error");
@@ -496,6 +508,7 @@ export function useSpinePlayer(playerContainer: Ref<HTMLElement | null>) {
         playerInstance = player;
 
         try {
+            installAudioListener(player);
             player.skeleton.setToSetupPose();
             player.skeleton.updateWorldTransform();
 
@@ -797,60 +810,201 @@ export function useSpinePlayer(playerContainer: Ref<HTMLElement | null>) {
         downloadSkeleton.value.downloadError = null;
     }
 
-    function setPlayerAnimation(animationName: string, loopAnimation: boolean = true): boolean {
+    function normalizeAudioKey(value: string): string {
+        return value
+            .replace(/\\/g, "/")
+            .replace(/^\.\//, "")
+            .replace(/^audio\//i, "")
+            .replace(/\.[^./]+$/i, "")
+            .toLowerCase();
+    }
+
+    function findAudioAsset(candidates: Array<string | null | undefined>): AudioAsset | undefined {
+        const keys = candidates
+            .filter((candidate): candidate is string => Boolean(candidate?.trim()))
+            .map(candidate => normalizeAudioKey(candidate.trim()));
+        const basenames = keys.map(key => key.split("/").pop() || key);
+
+        for (const asset of spineStore.audioAssets) {
+            const relativeKey = normalizeAudioKey(asset.relativePath);
+            const fileKey = normalizeAudioKey(asset.fileName);
+            if (keys.includes(relativeKey) || basenames.includes(fileKey)) {
+                return asset;
+            }
+        }
+        return undefined;
+    }
+
+    function stopActiveAudio(): void {
+        audioPlaybackToken += 1;
+        if (activeAudio) {
+            activeAudio.pause();
+            activeAudio.currentTime = 0;
+            activeAudio = null;
+        }
+    }
+
+    async function playAudioAsset(relativePath: string): Promise<void> {
+        const folderPath = spineStore.audioFolder;
+        if (!folderPath) return;
+
+        const cacheKey = `${folderPath}\\${relativePath}`;
+        const requestToken = ++audioPlaybackToken;
+
+        try {
+            let audioUrl = audioDataCache.get(cacheKey);
+            if (!audioUrl) {
+                audioUrl = await invoke<string>("read_audio_file", { folderPath, relativePath });
+                audioDataCache.set(cacheKey, audioUrl);
+            }
+
+            if (requestToken !== audioPlaybackToken) return;
+
+            if (activeAudio) {
+                activeAudio.pause();
+                activeAudio.currentTime = 0;
+            }
+
+            const audio = new Audio(audioUrl);
+            audio.preload = "auto";
+            audio.onended = () => {
+                if (activeAudio === audio) activeAudio = null;
+            };
+            activeAudio = audio;
+            await audio.play();
+        } catch (error) {
+            logMessage(`Could not play audio '${relativePath}': ${String(error)}`, "warning");
+        }
+    }
+
+    function installAudioListener(player: SpinePlayer): void {
+        if (!player.animationState?.addListener) return;
+
+        audioStateListener = {
+            start: (entry: any) => {
+                if (isManualSequenceAudio) return;
+                const animationName = entry?.animation?.name;
+                const asset = findAudioAsset([animationName]);
+                if (asset) void playAudioAsset(asset.relativePath);
+            },
+            event: (_entry: any, event: any) => {
+                if (isManualSequenceAudio) return;
+                const eventData = event?.data;
+                const asset = findAudioAsset([
+                    eventData?.audioPath,
+                    event?.stringValue,
+                    eventData?.stringValue,
+                    eventData?.name
+                ]);
+                if (asset) void playAudioAsset(asset.relativePath);
+            }
+        };
+        player.animationState.addListener(audioStateListener);
+    }
+
+    function playSequenceAnimation(index: number): void {
+        if (!playerInstance || !isAllAnimationsMode || cutAnimationsCache.length === 0) return;
+
+        if (index >= cutAnimationsCache.length) {
+            if (spineStore.loopAnimation) {
+                index = 0;
+                stopActiveAudio();
+                if (isManualSequenceAudio && spineStore.sequenceAudioPath) {
+                    void playAudioAsset(spineStore.sequenceAudioPath);
+                }
+            } else {
+                playerInstance.pause();
+                stopActiveAudio();
+                isAllAnimationsMode = false;
+                isManualSequenceAudio = false;
+                return;
+            }
+        }
+
+        currentAnimationIndex = index;
+        const animationName = cutAnimationsCache[index];
+        try {
+            const trackEntry = playerInstance.animationState.setAnimation(0, animationName, false);
+            trackEntry.listener = {
+                complete: () => {
+                    if (playerInstance && isAllAnimationsMode) {
+                        playSequenceAnimation(index + 1);
+                    }
+                }
+            };
+            logMessage(`Playing skill sequence part ${index + 1}/${cutAnimationsCache.length}: ${animationName}`, "info");
+        } catch (error) {
+            stopActiveAudio();
+            isAllAnimationsMode = false;
+            isManualSequenceAudio = false;
+            logMessage(`Error playing animation '${animationName}': ${String(error)}`, "error");
+        }
+    }
+
+    function playFullSkillSequence(): void {
+        if (!playerInstance) {
+            logMessage("Cannot play the skill sequence: Player not initialized", "warning");
+            return;
+        }
+
+        const animationNames = [...spineStore.animations];
+        const animationNameOrder = new Intl.Collator("en", { numeric: true, sensitivity: "base" });
+        const cutAnimations = animationNames
+            .filter(animation => animation.toLowerCase().includes("cut"))
+            .sort(animationNameOrder.compare);
+        cutAnimationsCache = cutAnimations.length > 0
+            ? cutAnimations
+            : animationNames.sort(animationNameOrder.compare);
+
+        if (cutAnimationsCache.length === 0) return;
+
+        playerInstance.play();
+        isAllAnimationsMode = true;
+        currentAnimationIndex = 0;
+        stopActiveAudio();
+
+        const selectedAudioPath = spineStore.sequenceAudioPath;
+        const selectedAudio = selectedAudioPath
+            ? spineStore.audioAssets.find(asset => asset.relativePath === selectedAudioPath)
+            : undefined;
+        isManualSequenceAudio = Boolean(selectedAudio);
+        if (selectedAudio) void playAudioAsset(selectedAudio.relativePath);
+
+        logMessage(`Starting full skill sequence with ${cutAnimationsCache.length} animation parts`, "info");
+        playSequenceAnimation(0);
+    }
+
+    function setPlayerAnimation(animationName: string, shouldLoop: boolean = true): boolean {
         if (!playerInstance) {
             logMessage(`Cannot set animation '${animationName}': Player not initialized`, "warning");
             return false;
         }
 
-        // playerInstance.animationState.clearTracks();
+        stopActiveAudio();
+        isManualSequenceAudio = false;
 
         try {
             playerInstance.play();
+            const trackEntry = playerInstance.animationState.setAnimation(0, animationName, shouldLoop);
 
-            const trackEntry = playerInstance.animationState.setAnimation(0, animationName, loopAnimation);
-
-            // Set up completion listener based on mode
-            if (isAllAnimationsMode && !loopAnimation) {
-                // In "All" mode, cycle to next animation when current one completes
+            if (!shouldLoop) {
                 trackEntry.listener = {
                     complete: () => {
-                        if (playerInstance && isAllAnimationsMode && cutAnimationsCache.length > 1) {
-                            // Only cycle if loop is still enabled (global loop setting controls cycling)
-                            if (spineStore.loopAnimation) {
-                                currentAnimationIndex = (currentAnimationIndex + 1) % cutAnimationsCache.length;
-                                const nextAnimation = cutAnimationsCache[currentAnimationIndex];
-                                setPlayerAnimation(nextAnimation, false); // Keep non-looping for cycling
-                            } else {
-                                // Loop is OFF: stop cycling and pause
-                                playerInstance.pause();
-                            }
-                        }
-                    }
-                };
-            } else if (!loopAnimation && !isAllAnimationsMode) {
-                // Standard non-loop behavior - pause when complete
-                trackEntry.listener = {
-                    complete: () => {
-                        if (playerInstance) {
+                        if (playerInstance && !isAllAnimationsMode) {
                             playerInstance.pause();
+                            stopActiveAudio();
                             logMessage(`Animation '${animationName}' completed and player is now paused.`, "info");
                         }
                     }
                 };
             }
 
-            logMessage(`Playing animation: ${animationName} (loop=${loopAnimation})`, "info");
-
-            // doesnt needed because if animation is being set, it means it was changed
-            // spineStore.currentAnimation = animationName;
-
-            return true
+            logMessage(`Playing animation: ${animationName} (loop=${shouldLoop})`, "info");
+            return true;
         } catch (error) {
-            logMessage(`Error setting animation: ${error}`, "error");
+            logMessage(`Error setting animation: ${String(error)}`, "error");
+            return false;
         }
-
-        return false
     }
 
 
@@ -1038,6 +1192,25 @@ export function useSpinePlayer(playerContainer: Ref<HTMLElement | null>) {
     // --------------------------
     // from store to composable
 
+    watch(() => spineStore.audioFolder, async (folderPath) => {
+        const scanToken = ++audioScanToken;
+        audioDataCache.clear();
+        stopActiveAudio();
+        spineStore.setAudioAssets([]);
+
+        if (!folderPath) return;
+
+        try {
+            const assets = await invoke<AudioAsset[]>("list_audio_files", { folderPath });
+            if (scanToken !== audioScanToken) return;
+            spineStore.setAudioAssets(assets);
+            logMessage(`Found ${assets.length} supported audio files in: ${folderPath}`, "info");
+        } catch (error) {
+            if (scanToken !== audioScanToken) return;
+            logMessage(`Could not scan audio folder: ${String(error)}`, "error");
+        }
+    }, { immediate: true });
+
     watch(source, async (source) => {
         if (source === null || source === undefined) {
             logMessage("Source is empty. Destroying the player.", "warning");
@@ -1062,37 +1235,12 @@ export function useSpinePlayer(playerContainer: Ref<HTMLElement | null>) {
 
     watch([currentAnimation, animationTrigger], ([animation]) => {
         if (typeof animation === 'string') {
-            if (animation === 'All') {
-                // Handle "All" - cycle through cut animations
-                const allAnimations = spineStore.animations;
-                const cutAnimations = allAnimations.filter(anim => 
-                    anim.includes('cut')
-                );
-                
-                if (cutAnimations.length > 0) {
-                    isAllAnimationsMode = true;
-                    cutAnimationsCache = cutAnimations;
-                    currentAnimationIndex = 0;
-                    const firstAnimation = cutAnimations[0];
-                    
-                    // Start with non-looping so we get completion events for cycling
-                    setPlayerAnimation(firstAnimation, false);
-                    logMessage(`Starting animation cycle with ${cutAnimations.length} animations`, "info");
-                } else {
-                    // Fallback: use all animations if no cut animations found
-                    if (allAnimations.length > 0) {
-                        isAllAnimationsMode = true;
-                        cutAnimationsCache = allAnimations;
-                        currentAnimationIndex = 0;
-                        const firstAnimation = allAnimations[0];
-                        setPlayerAnimation(firstAnimation, false);
-                        logMessage(`No cut animations found, cycling through all ${allAnimations.length} animations`, "info");
-                    }
-                }
+            if (animation === FULL_SKILL_SEQUENCE) {
+                playFullSkillSequence();
             } else {
-                // Individual animation selected - exit "All" mode
                 isAllAnimationsMode = false;
                 cutAnimationsCache = [];
+                isManualSequenceAudio = false;
                 setPlayerAnimation(animation, loopAnimation.value);
             }
         }
@@ -1101,22 +1249,15 @@ export function useSpinePlayer(playerContainer: Ref<HTMLElement | null>) {
     watch(loopAnimation, (shouldLoop) => {
         if (playerInstance && currentAnimation.value) {
             if (isAllAnimationsMode) {
-                if (shouldLoop) {
-                    // Loop ON: Resume cycling through all cut animations
-                    if (cutAnimationsCache.length > 0) {
-                        const currentAnim = cutAnimationsCache[currentAnimationIndex] || cutAnimationsCache[0];
-                        setPlayerAnimation(currentAnim, false); // Keep non-looping for cycling
-                    }
-                } else {
-                    // Loop OFF: Stop cycling, stay on current animation and let it finish
-                    if (cutAnimationsCache.length > 0) {
-                        const currentAnim = cutAnimationsCache[currentAnimationIndex] || cutAnimationsCache[0];
-                        setPlayerAnimation(currentAnim, false); // Non-looping, will stop when complete
-                    }
-                }
+                // The sequence completion handler reads the current loop setting.
                 return;
             }
-            
+
+            if (currentAnimation.value === FULL_SKILL_SEQUENCE) {
+                if (shouldLoop) playFullSkillSequence();
+                return;
+            }
+
             setPlayerAnimation(currentAnimation.value, shouldLoop);
         }
     })
