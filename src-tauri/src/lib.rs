@@ -92,7 +92,9 @@ pub fn run() {
             get_user_locale,
             get_spine_assets,
             get_mod_backgrounds,
-            download_missing_skeleton
+            download_missing_skeleton,
+            list_audio_files,
+            read_audio_file
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

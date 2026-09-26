@@ -18,6 +18,7 @@ import type {
 	SpineAssetsData,
 	SpinePlayer,
 	AnimationSequence,
+	AudioAsset,
 	LoadStep,
 	LoadStepState,
 } from "../types/spine";
@@ -83,6 +84,12 @@ export function usePreview(
 	const hiddenAttachments = new Map<any, any>();
 	let loadId = 0;
 	let spinePlayer: SpinePlayer | null = null;
+	let audioStateListener: any = null;
+	let activeAudio: HTMLAudioElement | null = null;
+	let audioPlaybackToken = 0;
+	let sequenceAudioStep = -1;
+	let isManualSequenceAudio = false;
+	const audioDataCache = new Map<string, string>();
 	const loadSteps = ref<LoadStep[]>([]);
 	let frameRequest: ((frame: HTMLCanvasElement) => void) | null = null;
 	let previousCamera: typeof camera = null;
@@ -221,6 +228,8 @@ export function usePreview(
 	function playGameCutscene() {
 		if (!spinePlayer || !settings.value || !cutscene.available.value) return;
 		stopSequence();
+		stopActiveAudio();
+		isManualSequenceAudio = false;
 		datingInteraction.enabled.value = false;
 		minigame.enabled.value = false;
 		if (!cutscene.active.value) previousCamera = camera ? { ...camera } : null;
@@ -297,8 +306,108 @@ export function usePreview(
 		previousCamera = null;
 	}
 
+	function normalizeAudioKey(value: string): string {
+		return value
+			.replace(/\\/g, "/")
+			.replace(/^\.\//, "")
+			.replace(/^audio\//i, "")
+			.replace(/\.[^./]+$/i, "")
+			.toLowerCase();
+	}
+
+	function findAudioAsset(
+		candidates: Array<string | null | undefined>,
+	): AudioAsset | undefined {
+		const keys = candidates
+			.filter((candidate): candidate is string => Boolean(candidate?.trim()))
+			.map((candidate) => normalizeAudioKey(candidate.trim()));
+		const basenames = keys.map((key) => key.split("/").pop() || key);
+
+		for (const asset of settings.value?.audioAssets ?? []) {
+			const relativeKey = normalizeAudioKey(asset.relativePath);
+			const fileKey = normalizeAudioKey(asset.fileName);
+			if (keys.includes(relativeKey) || basenames.includes(fileKey)) return asset;
+		}
+		return undefined;
+	}
+
+	function stopActiveAudio() {
+		audioPlaybackToken += 1;
+		if (!activeAudio) return;
+		activeAudio.pause();
+		activeAudio.currentTime = 0;
+		activeAudio = null;
+	}
+
+	async function playAudioAsset(relativePath: string) {
+		const folderPath = settings.value?.audioFolder;
+		if (!folderPath) return;
+
+		const cacheKey = `${folderPath}\\${relativePath}`;
+		const requestToken = ++audioPlaybackToken;
+
+		try {
+			let audioUrl = audioDataCache.get(cacheKey);
+			if (!audioUrl) {
+				audioUrl = await invoke<string>("read_audio_file", {
+					folderPath,
+					relativePath,
+				});
+				audioDataCache.set(cacheKey, audioUrl);
+			}
+
+			if (requestToken !== audioPlaybackToken) return;
+			if (activeAudio) {
+				activeAudio.pause();
+				activeAudio.currentTime = 0;
+			}
+
+			const audio = new Audio(audioUrl);
+			audio.preload = "auto";
+			audio.onended = () => {
+				if (activeAudio === audio) activeAudio = null;
+			};
+			activeAudio = audio;
+			await audio.play();
+		} catch (error) {
+			logMessage(`Could not play audio '${relativePath}': ${String(error)}`, "warning");
+		}
+	}
+
+	function installAudioListener(player: SpinePlayer) {
+		if (!player.animationState?.addListener) return;
+
+		audioStateListener = {
+			start: (entry: any) => {
+				if (isManualSequenceAudio) return;
+				const asset = findAudioAsset([entry?.animation?.name]);
+				if (asset) void playAudioAsset(asset.relativePath);
+			},
+			event: (_entry: any, event: any) => {
+				if (isManualSequenceAudio) return;
+				const eventData = event?.data;
+				const asset = findAudioAsset([
+					eventData?.audioPath,
+					event?.stringValue,
+					eventData?.stringValue,
+					eventData?.name,
+				]);
+				if (asset) void playAudioAsset(asset.relativePath);
+			},
+		};
+		player.animationState.addListener(audioStateListener);
+	}
+
 	function playSequence(sequence: AnimationSequence) {
 		if (!spinePlayer || !settings.value) return;
+		stopActiveAudio();
+		const selectedAudio = settings.value.sequenceAudioPath
+			? settings.value.audioAssets.find(
+					(asset) => asset.relativePath === settings.value?.sequenceAudioPath,
+				)
+			: undefined;
+		isManualSequenceAudio = Boolean(selectedAudio);
+		sequenceAudioStep = -1;
 		datingInteraction.enabled.value = false;
 		minigame.enabled.value = false;
 		stopGameCutscene();
@@ -306,6 +415,7 @@ export function usePreview(
 		settings.value.followGlobalAnimation = false;
 		spinePlayer.animationState.clearTracks();
 		playbackTime.value = 0;
+		if (selectedAudio) void playAudioAsset(selectedAudio.relativePath);
 		applySequence(0);
 		settings.value!.paused = false;
 		spinePlayer.play();
@@ -314,6 +424,9 @@ export function usePreview(
 	function stopSequence() {
 		if (!activeSequence.value) return;
 		activeSequence.value = null;
+		sequenceAudioStep = -1;
+		isManualSequenceAudio = false;
+		stopActiveAudio();
 
 		if (spinePlayer && currentAnimation.value) {
 			spinePlayer.setAnimation(
@@ -360,6 +473,26 @@ export function usePreview(
 
 		while (index < steps.length - 1 && position >= start + lengths[index]) {
 			start += lengths[index++];
+		}
+
+		const sequenceLooped =
+			!!settings.value?.loopAnimation &&
+			time > 0 &&
+			position < playbackTime.value;
+		if (sequenceLooped) sequenceAudioStep = -1;
+		if (index !== sequenceAudioStep) {
+			sequenceAudioStep = index;
+			if (isManualSequenceAudio) {
+				if (sequenceLooped && settings.value?.sequenceAudioPath)
+					void playAudioAsset(settings.value.sequenceAudioPath);
+			} else {
+				stopActiveAudio();
+				const animationNames = (activeSequence.value.steps[index] ?? []).map(
+					(entry) => entry.animation,
+				);
+				const asset = findAudioAsset(animationNames);
+				if (asset) void playAudioAsset(asset.relativePath);
+			}
 		}
 
 		skeleton.setToSetupPose();
@@ -667,6 +800,7 @@ export function usePreview(
 		}
 
 		if (cutscene.active.value) {
+			stopActiveAudio();
 			cutscene.seek(0);
 			playbackTime.value = 0;
 
@@ -674,11 +808,17 @@ export function usePreview(
 		}
 
 		if (activeSequence.value) {
+			stopActiveAudio();
+			sequenceAudioStep = -1;
+			const sequenceAudioPath = settings.value?.sequenceAudioPath;
+			if (isManualSequenceAudio && sequenceAudioPath)
+				void playAudioAsset(sequenceAudioPath);
 			applySequence(0);
 
 			return;
 		}
 
+		stopActiveAudio();
 		for (const track of spinePlayer.animationState.tracks) {
 			if (!track) continue;
 			track.trackTime = 0;
@@ -691,6 +831,8 @@ export function usePreview(
 
 		applyPose();
 		playbackTime.value = 0;
+		const asset = findAudioAsset([currentAnimation.value]);
+		if (asset) void playAudioAsset(asset.relativePath);
 	}
 
 	function seekTo(value: number) {
@@ -1099,6 +1241,7 @@ export function usePreview(
 
 	function onPlayerSuccess(player: SpinePlayer) {
 		spinePlayer = player;
+		installAudioListener(player);
 
 		const animations = player.skeleton.data.animations.map(
 			(animation: any) => animation.name,
@@ -1152,6 +1295,12 @@ export function usePreview(
 	}
 
 	function destroyPlayer() {
+		stopActiveAudio();
+		isManualSequenceAudio = false;
+		sequenceAudioStep = -1;
+		if (spinePlayer && audioStateListener)
+			spinePlayer.animationState?.removeListener?.(audioStateListener);
+		audioStateListener = null;
 		cutscene.dispose();
 		previousCamera = null;
 		minigame.load(null);
@@ -1270,6 +1419,8 @@ export function usePreview(
 
 		datingInteraction.reset();
 		stopSequence();
+		stopActiveAudio();
+		isManualSequenceAudio = false;
 
 		if (spinePlayer && animation && allAnimations.value.includes(animation)) {
 			// switch immediately, without keeping the previous animation's pose

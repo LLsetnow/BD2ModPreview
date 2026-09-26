@@ -50,6 +50,15 @@
   "datingAudioStatus": { "loading": "Loading audio {loaded}/{total}", "completed": "Audio loading completed", "failed": "Audio loaded {loaded}/{total}. Some files could not be loaded." },
   "minigameAudio": "Enable sounds for minigames",
   "datingAudio": "Enable sounds and voices for dating interactions",
+  "skillAudio": {
+    "fullSkillSequence": "Play Full Skill",
+    "chooseFolder": "Choose Audio Folder",
+    "changeFolder": "Change Audio Folder",
+    "filesFound": "{count} audio files found",
+    "sequenceTrack": "Full-sequence audio (optional)",
+    "autoMatch": "Auto match animation/events",
+    "help": "Load extracted OGG, MP3, or WAV files. Auto mode matches Spine event or animation names; a selected file plays once with the sequence."
+  },
   "gameBackgroundPrompt": {
     "title": "Show the cutscene background?",
     "message": "This cutscene has its animated background from the game ({count} images, {size}, downloaded once). You can also play the cutscene without it.",

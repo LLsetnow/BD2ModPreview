@@ -24,6 +24,14 @@ The mod folder must include:
 - .atlas file
 - Corresponding .png texture(s)
 
+### Skill animation and audio preview
+
+Choose **Play Full Skill** in the animation list to play the cut animations in natural name order. Turn off **Loop Animation** to play the sequence once.
+
+To add audio, choose a folder containing extracted `.ogg`, `.mp3`, or `.wav` clips. In automatic mode, clips are matched to Spine event audio paths or animation names. Selecting a clip in **Full-sequence audio** plays that clip from the start of the full sequence.
+
+Audio clips are not included with the Spine mod files. FMOD/FSB game banks must be extracted to a supported audio format before selecting them here.
+
 ## Spine Runtime License
 
 This project uses the official Spine runtimes provided by [Esoteric Software](http://esotericsoftware.com/).  

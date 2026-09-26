@@ -54,6 +54,15 @@
     },
     "minigameAudio": "ミニゲームの効果音を有効にする",
     "datingAudio": "デートインタラクションの効果音とボイスを有効にする",
+    "skillAudio": {
+        "fullSkillSequence": "スキル全体を再生",
+        "chooseFolder": "音声フォルダーを選択",
+        "changeFolder": "音声フォルダーを変更",
+        "filesFound": "音声ファイル {count} 個",
+        "sequenceTrack": "シーケンス全体の音声（任意）",
+        "autoMatch": "アニメーション/イベントに自動で一致",
+        "help": "展開済みの OGG、MP3、WAV ファイルを読み込みます。自動モードでは Spine イベント名またはアニメーション名で一致します。選択したファイルはシーケンスに合わせて再生します。"
+    },
     "datingPointSettings": {
         "click": "クリックポイント",
         "drag": "ドラッグポイント",

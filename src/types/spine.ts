@@ -39,3 +39,8 @@ export interface LoadStep {
 	loaded?: number;
 	total?: number;
 }
+
+export interface AudioAsset {
+  relativePath: string;
+  fileName: string;
+}

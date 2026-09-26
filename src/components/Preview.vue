@@ -11,7 +11,7 @@ import { computed, nextTick, ref, useTemplateRef, watch } from "vue"
 import { usePreviewDrag } from "../composables/usePreviewDrag"
 import { usePreview } from "../composables/usePreview"
 import SequenceEditor from "./modals/SequenceEditor.vue"
-import type { AnimationSequence } from "../types/spine"
+import type { AnimationSequence, AudioAsset } from "../types/spine"
 import { useModManagerStore } from "../stores/modManager"
 import { usePreviewerStore } from "../stores/previewer"
 import { useUIStore } from "../stores/ui"
@@ -229,6 +229,58 @@ function openSequence(index: number | null) {
   editingSequence.value = index
   animationsOpen.value = false
   sequenceEditorOpen.value = true
+}
+
+const fullSkillSequenceLabel = computed(() => t("skillAudio.fullSkillSequence"))
+const audioFolderName = computed(() => {
+  const folder = settings.value?.audioFolder
+  if (!folder) return ""
+  return folder.split(/[\\/]/).filter(Boolean).pop() || folder
+})
+const sequenceAudioSelection = computed({
+  get: () => settings.value?.sequenceAudioPath ?? null,
+  set: (value: string | null) => {
+    if (settings.value) settings.value.sequenceAudioPath = value
+  },
+})
+
+function playFullSkillSequence() {
+  const collator = new Intl.Collator("en", { numeric: true, sensitivity: "base" })
+  const animations = [...allAnimations.value]
+  const cutAnimations = animations
+    .filter(animation => animation.toLowerCase().includes("cut"))
+    .sort(collator.compare)
+  const orderedAnimations = cutAnimations.length
+    ? cutAnimations
+    : animations.sort(collator.compare)
+
+  if (!orderedAnimations.length) return
+
+  const sequence: AnimationSequence = {
+    name: fullSkillSequenceLabel.value,
+    steps: orderedAnimations.map(animation => [{ animation, delay: 0, duration: null }]),
+  }
+  playSequence(sequence)
+}
+
+async function chooseAudioFolder() {
+  try {
+    const folderPath = await open({
+      directory: true,
+      multiple: false,
+      title: t("skillAudio.chooseFolder"),
+    })
+    if (typeof folderPath !== "string" || !folderPath || !settings.value) return
+
+    settings.value.audioFolder = folderPath
+    settings.value.audioAssets = []
+    settings.value.sequenceAudioPath = null
+    settings.value.audioAssets = await invoke<AudioAsset[]>("list_audio_files", {
+      folderPath,
+    })
+  } catch (error) {
+    logMessage(`Could not load audio folder: ${String(error)}`, "warning")
+  }
 }
 
 function saveSequence(sequence: AnimationSequence) {
@@ -929,6 +981,11 @@ const poseErrorMessage = computed(() => {
             <Check v-if="!cutsceneActive && !activeSequence && animationSelection === animation" :size="16"
               aria-hidden="true" />
           </button>
+          <button type="button" :aria-pressed="activeSequence?.name === fullSkillSequenceLabel"
+            @click="playFullSkillSequence">
+            <span>{{ fullSkillSequenceLabel }}</span>
+            <Check v-if="activeSequence?.name === fullSkillSequenceLabel" :size="16" aria-hidden="true" />
+          </button>
           <button v-if="cutsceneAvailable" type="button" :aria-pressed="cutsceneActive" @click="playGameCutscene">
             <span>{{ t('preview.gameCutscene') }}</span>
             <Check v-if="cutsceneActive" :size="16" aria-hidden="true" />
@@ -951,6 +1008,23 @@ const poseErrorMessage = computed(() => {
             <button type="button" @click="openSequence(null)"><span>{{ t('preview.createSequence') }}</span>
               <Plus :size="16" aria-hidden="true" />
             </button>
+          </div>
+          <div class="skill-audio-options">
+            <button type="button" @click="chooseAudioFolder">
+              {{ settings?.audioFolder ? t("skillAudio.changeFolder") : t("skillAudio.chooseFolder") }}
+            </button>
+            <p v-if="settings?.audioFolder" class="skill-audio-folder" :title="settings.audioFolder">
+              {{ audioFolderName }} · {{ t("skillAudio.filesFound", { count: settings.audioAssets.length }) }}
+            </p>
+            <label for="sequence-audio-select">{{ t("skillAudio.sequenceTrack") }}</label>
+            <select id="sequence-audio-select" v-model="sequenceAudioSelection"
+              :disabled="!settings?.audioAssets.length">
+              <option :value="null">{{ t("skillAudio.autoMatch") }}</option>
+              <option v-for="asset in settings?.audioAssets ?? []" :key="asset.relativePath" :value="asset.relativePath">
+                {{ asset.relativePath }}
+              </option>
+            </select>
+            <p class="skill-audio-help">{{ t("skillAudio.help") }}</p>
           </div>
         </div>
       </Teleport>
@@ -1473,6 +1547,49 @@ const poseErrorMessage = computed(() => {
   border-top: 1px solid var(--border-default);
   margin-top: 4px;
   padding-top: 4px;
+}
+
+.skill-audio-options {
+  display: grid;
+  gap: 6px;
+  border-top: 1px solid var(--border-default);
+  margin-top: 4px;
+  padding: 8px 4px 4px;
+}
+
+.skill-audio-options button {
+  border: 1px solid var(--border-default);
+  background: var(--surface-panel);
+}
+
+.skill-audio-options label,
+.skill-audio-folder,
+.skill-audio-help {
+  color: var(--text-secondary);
+  font-size: 11px;
+}
+
+.skill-audio-folder {
+  overflow: hidden;
+  margin: 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.skill-audio-options select {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--border-default);
+  border-radius: 3px;
+  padding: 6px 8px;
+  background: var(--surface-panel);
+  color: var(--text-primary);
+  font: inherit;
+}
+
+.skill-audio-help {
+  margin: 0;
+  line-height: 1.4;
 }
 
 .preview-panel {

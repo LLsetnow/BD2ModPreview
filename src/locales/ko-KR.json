@@ -54,6 +54,15 @@
     },
     "minigameAudio": "미니게임 효과음 활성화",
     "datingAudio": "데이트 상호작용의 효과음과 음성 활성화",
+    "skillAudio": {
+        "fullSkillSequence": "스킬 전체 재생",
+        "chooseFolder": "오디오 폴더 선택",
+        "changeFolder": "오디오 폴더 변경",
+        "filesFound": "오디오 파일 {count}개",
+        "sequenceTrack": "전체 시퀀스 오디오(선택 사항)",
+        "autoMatch": "애니메이션/이벤트 자동 매칭",
+        "help": "추출한 OGG, MP3, WAV 파일을 불러옵니다. 자동 모드는 Spine 이벤트명 또는 애니메이션명과 일치시킵니다. 선택한 파일은 시퀀스에 맞춰 재생됩니다."
+    },
     "datingPointSettings": {
         "click": "클릭 포인트",
         "drag": "드래그 포인트",

@@ -1,7 +1,7 @@
 import { defineStore } from "pinia";
 import { ref, computed, readonly } from "vue";
 import { useLocalStorage } from "@vueuse/core";
-import type { AnimationSequence, SpineSource } from "../types/spine";
+import type { AnimationSequence, AudioAsset, SpineSource } from "../types/spine";
 import type { PreviewDropTarget } from "../composables/usePreviewDrag";
 import { i18n } from "../i18n";
 import type { GameBackgroundInfo } from "../types/background";
@@ -27,6 +27,9 @@ export interface Previewer {
 		loopAnimation: boolean;
 		premultipliedAlpha: boolean;
 		background: PreviewBackground;
+		audioFolder: string | null;
+		audioAssets: AudioAsset[];
+		sequenceAudioPath: string | null;
 	};
 	allAnimations: string[];
 	gameBackground: GameBackgroundInfo | null;
@@ -148,6 +151,9 @@ export const usePreviewerStore = defineStore("previewer", () => {
 				loopAnimation: true,
 				premultipliedAlpha: premultipliedAlpha.value,
 				background: { type: "theme" },
+				audioFolder: null,
+				audioAssets: [],
+				sequenceAudioPath: null,
 			},
 			allAnimations: [],
 			gameBackground: null,

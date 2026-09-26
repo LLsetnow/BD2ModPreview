@@ -31,6 +31,13 @@ pub struct SpineAssetData {
     pub raw_data: HashMap<String, String>,
 }
 
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AudioAsset {
+    pub relative_path: String,
+    pub file_name: String,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum ModType {
