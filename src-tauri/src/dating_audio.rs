@@ -1,6 +1,6 @@
 use base64::{engine::general_purpose::STANDARD, Engine};
 use sha2::{Digest, Sha256};
-use std::{fs, io::Read, path::Path, sync::Mutex, time::Duration};
+use std::{fs, io::Read, sync::Mutex, time::Duration};
 use tauri::Manager;
 
 static CACHE_LOCK: Mutex<()> = Mutex::new(());
@@ -13,17 +13,18 @@ pub struct DatingAudioDownload {
 }
 
 #[tauri::command]
-pub async fn get_dating_audio(app: tauri::AppHandle, hash: String, audio_directory: String) -> Result<DatingAudioDownload, String> {
+pub async fn get_dating_audio(app: tauri::AppHandle, hash: String) -> Result<DatingAudioDownload, String> {
     if hash.len() != 64 || !hash.bytes().all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b)) {
         return Err("Invalid audio hash".into());
     }
     let directory = app.path().app_cache_dir().map_err(|e| e.to_string())?.join("dating-audio");
+    let local_path = crate::asset_library::local_file(&app, &format!("audio/dating/{hash}.ogg"));
     tauri::async_runtime::spawn_blocking(move || {
         let path = directory.join(format!("{hash}.ogg"));
         {
             let _guard = CACHE_LOCK.lock().map_err(|e| e.to_string())?;
-            if !audio_directory.trim().is_empty() {
-                if let Ok(data) = fs::read(Path::new(&audio_directory).join(format!("{hash}.ogg"))) {
+            if let Some(local_path) = local_path {
+                if let Ok(data) = fs::read(local_path) {
                     if data.starts_with(b"OggS") && hex::encode(Sha256::digest(&data)) == hash {
                         return Ok(DatingAudioDownload { data: STANDARD.encode(data), failures: Vec::new() });
                     }

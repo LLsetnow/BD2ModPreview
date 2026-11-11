@@ -266,7 +266,6 @@ function openSequence(index: number | null) {
   sequenceEditorOpen.value = true
 }
 
-const fullSkillSequenceLabel = computed(() => t("skillAudio.fullSkillSequence"))
 const audioFolderName = computed(() => {
   const folder = settings.value?.audioFolder
   if (!folder) return ""
@@ -278,25 +277,6 @@ const sequenceAudioSelection = computed({
     if (settings.value) settings.value.sequenceAudioPath = value
   },
 })
-
-function playFullSkillSequence() {
-  const collator = new Intl.Collator("en", { numeric: true, sensitivity: "base" })
-  const animations = [...allAnimations.value]
-  const cutAnimations = animations
-    .filter(animation => animation.toLowerCase().includes("cut"))
-    .sort(collator.compare)
-  const orderedAnimations = cutAnimations.length
-    ? cutAnimations
-    : animations.sort(collator.compare)
-
-  if (!orderedAnimations.length) return
-
-  const sequence: AnimationSequence = {
-    name: fullSkillSequenceLabel.value,
-    steps: orderedAnimations.map(animation => [{ animation, delay: 0, duration: null }]),
-  }
-  playSequence(sequence)
-}
 
 async function chooseAudioFolder() {
   try {
@@ -1022,11 +1002,6 @@ const poseErrorMessage = computed(() => {
             <span>{{ animation }}</span>
             <Check v-if="!cutsceneActive && !activeSequence && animationSelection === animation" :size="16"
               aria-hidden="true" />
-          </button>
-          <button type="button" :aria-pressed="activeSequence?.name === fullSkillSequenceLabel"
-            @click="playFullSkillSequence">
-            <span>{{ fullSkillSequenceLabel }}</span>
-            <Check v-if="activeSequence?.name === fullSkillSequenceLabel" :size="16" aria-hidden="true" />
           </button>
           <button v-if="cutsceneAvailable" type="button" :aria-pressed="cutsceneActive" @click="playGameCutscene">
             <span>{{ t('preview.gameCutscene') }}</span>

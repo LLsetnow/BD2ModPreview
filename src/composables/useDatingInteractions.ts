@@ -907,7 +907,7 @@ export function useDatingInteractions(
 			try {
 				for (const [name, data] of Object.entries(raw ?? {}))
 					manager.setRawDataURI(name, data);
-				if (skeletonUrl.endsWith(".json"))
+				if (skeletonUrl.split(/[?#]/)[0]!.endsWith(".json"))
 					manager.loadJson(skeletonUrl);
 				else manager.loadBinary(skeletonUrl);
 				manager.loadTextureAtlas(atlasUrl);
@@ -919,7 +919,7 @@ export function useDatingInteractions(
 				const loader = new spine.AtlasAttachmentLoader(
 					manager.get(atlasUrl),
 				);
-				const reader = skeletonUrl.endsWith(".json")
+				const reader = skeletonUrl.split(/[?#]/)[0]!.endsWith(".json")
 					? new spine.SkeletonJson(loader)
 					: new spine.SkeletonBinary(loader);
 				const data = reader.readSkeletonData(manager.get(skeletonUrl));

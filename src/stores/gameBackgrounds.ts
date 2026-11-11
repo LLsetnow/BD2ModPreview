@@ -1,5 +1,6 @@
 import { defineStore } from "pinia";
-import { ref } from "vue";
+import { ref, watch } from "vue";
+import { useAssetLibraryStore } from './assetLibrary';
 import { useLocalStorage } from "@vueuse/core";
 import { invoke } from "@tauri-apps/api/core";
 
@@ -12,7 +13,7 @@ export interface BackgroundPrompt {
 export const useGameBackgroundStore = defineStore("gameBackgrounds", () => {
 	const mode = useLocalStorage<"ask" | "always">("GAME_BACKGROUND_MODE", "ask");
 	const showByDefault = useLocalStorage("GAME_BACKGROUND_SHOW", true);
-	const backgroundDirectory = useLocalStorage("GAME_BACKGROUND_DIRECTORY", "F:\\Neowiz\\Brown-Dust-2-Asset-master\\backgrounds\\cutscene");
+	const library = useAssetLibraryStore();
 	const cacheSize = ref(0);
 	const prompt = ref<BackgroundPrompt | null>(null);
 	const decided = new Set<string>();
@@ -20,10 +21,10 @@ export const useGameBackgroundStore = defineStore("gameBackgrounds", () => {
 	let pendingApply: (() => void) | null = null;
 
 	function load(hash: string): Promise<string> {
-		const key = `${backgroundDirectory.value}|${hash}`;
+		const key = `${library.activeRoot}|${hash}`;
 		let request = loaded.get(key);
 		if (!request) {
-			request = invoke<string>("get_game_background", { hash, backgroundDirectory: backgroundDirectory.value });
+			request = library.ready().then(() => invoke<string>("get_game_background", { hash }));
 			request.then(refreshCacheSize, () => loaded.delete(key));
 			loaded.set(key, request);
 		}
@@ -47,9 +48,10 @@ export const useGameBackgroundStore = defineStore("gameBackgrounds", () => {
 		apply: () => void,
 	) {
 		if (!showByDefault.value || decided.has(key)) return;
+		await library.ready();
 		if (
 			mode.value === "always" ||
-			(await invoke<boolean>("has_game_backgrounds", { hashes, backgroundDirectory: backgroundDirectory.value }))
+			(await invoke<boolean>("has_game_backgrounds", { hashes }))
 		) {
 			decided.add(key);
 			apply();
@@ -71,5 +73,6 @@ export const useGameBackgroundStore = defineStore("gameBackgrounds", () => {
 		pendingApply = null;
 	}
 
-	return { mode, showByDefault, backgroundDirectory, cacheSize, prompt, load, refreshCacheSize, clearCache, offer, answer };
+	watch(() => library.activeRoot, () => { loaded.clear(); decided.clear(); prompt.value = null; pendingApply = null });
+	return { mode, showByDefault, cacheSize, prompt, load, refreshCacheSize, clearCache, offer, answer };
 });

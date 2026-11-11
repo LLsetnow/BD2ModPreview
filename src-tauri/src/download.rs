@@ -26,6 +26,19 @@ pub fn download_file(app: AppHandle, url: &str, dest_path: &Path) -> Result<(), 
         DownloadError::NetworkError(format!("Failed to emit download-started event: {}", e))
     })?;
 
+    if let Some(relative) = url.strip_prefix("https://raw.githubusercontent.com/bruhnn/Brown-Dust-2-Asset/refs/heads/master/") {
+        if let Some(source) = crate::asset_library::local_file(&app, relative) {
+            let size = std::fs::copy(&source, dest_path).map_err(|e| {
+                DownloadError::WriteError(format!("Failed to copy '{}' to '{}': {e}", source.display(), dest_path.display()))
+            })?;
+            app.emit("download-progress", DownloadProgress {
+                bytes_downloaded: size,
+                total_bytes: size,
+            }).map_err(|e| DownloadError::NetworkError(e.to_string()))?;
+            return Ok(());
+        }
+    }
+
     let response = get(url).map_err(|e| DownloadError::NetworkError(e.to_string()))?;
 
     if !response.status().is_success() {

@@ -4,6 +4,7 @@ mod download;
 mod dating_audio;
 mod dating_export;
 mod game_backgrounds;
+mod asset_library;
 mod errors;
 mod types;
 mod utils;
@@ -53,6 +54,14 @@ pub fn run() {
     }
 
     tauri::Builder::default()
+        .manage(asset_library::AssetLibrary::default())
+        .register_asynchronous_uri_scheme_protocol("bd2library", |context, request, responder| {
+            let root = context.app_handle().state::<asset_library::AssetLibrary>().root();
+            let path = request.uri().path().to_string();
+            tauri::async_runtime::spawn(async move {
+                responder.respond(asset_library::serve(root, path).await);
+            });
+        })
         .setup(|app| {
             #[cfg(windows)]
             if let Some(window) = app.get_webview_window("main") {
@@ -85,6 +94,7 @@ pub fn run() {
             ipc::connect_to_bd2mm,
             ipc::enable_mod_on_bd2mm,
             dating_audio::get_dating_audio,
+            asset_library::set_asset_library_root,
             dating_export::export_dating_scene,
             game_backgrounds::get_game_background,
             game_backgrounds::get_game_background_cache_size,

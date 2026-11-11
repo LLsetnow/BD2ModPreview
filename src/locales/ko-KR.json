@@ -55,12 +55,10 @@
     "minigameAudio": "미니게임 효과음 활성화",
     "datingAudio": "데이트 상호작용의 효과음과 음성 활성화",
     "assetPaths": {
-        "title": "에셋 폴더",
-        "datingAudio": "데이트 오디오 폴더",
-        "datingAudioHelp": "이 폴더에서 SHA-256 이름의 OGG 파일을 먼저 읽습니다.",
-        "gameBackgrounds": "게임 컷신 배경 폴더",
-        "gameBackgroundsHelp": "이 폴더에서 SHA-256 이름의 WebP 파일을 먼저 읽습니다.",
-        "choose": "폴더 선택"
+      "title": "에셋 라이브러리",
+      "root": "에셋 라이브러리 루트",
+      "rootHelp": "Brown-Dust-2-Asset 루트 폴더에서 모델, 일러스트, 텍스처, 오디오 및 배경을 필요할 때 읽습니다。",
+      "choose": "폴더 선택"
     },
     "skillAudio": {
         "fullSkillSequence": "스킬 전체 재생",

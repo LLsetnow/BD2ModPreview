@@ -55,12 +55,10 @@
     "minigameAudio": "ミニゲームの効果音を有効にする",
     "datingAudio": "デートインタラクションの効果音とボイスを有効にする",
     "assetPaths": {
-        "title": "アセットフォルダー",
-        "datingAudio": "デート音声フォルダー",
-        "datingAudioHelp": "このフォルダー内の SHA-256 名の OGG ファイルを優先して読み込みます。",
-        "gameBackgrounds": "ゲームカットシーン背景フォルダー",
-        "gameBackgroundsHelp": "このフォルダー内の SHA-256 名の WebP ファイルを優先して読み込みます。",
-        "choose": "フォルダーを選択"
+      "title": "アセットライブラリ",
+      "root": "素材ライブラリのルート",
+      "rootHelp": "Brown-Dust-2-Asset のルートフォルダーからモデル、イラスト、テクスチャ、音声、背景を必要に応じて読み込みます。",
+      "choose": "フォルダーを選択"
     },
     "skillAudio": {
         "fullSkillSequence": "スキル全体を再生",

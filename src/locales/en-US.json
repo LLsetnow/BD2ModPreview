@@ -51,11 +51,9 @@
   "minigameAudio": "Enable sounds for minigames",
   "datingAudio": "Enable sounds and voices for dating interactions",
   "assetPaths": {
-    "title": "Asset folders",
-    "datingAudio": "Dating audio folder",
-    "datingAudioHelp": "Reads SHA-256-named OGG files from this folder first.",
-    "gameBackgrounds": "Game cutscene backgrounds folder",
-    "gameBackgroundsHelp": "Reads SHA-256-named WebP files from this folder first.",
+    "title": "Asset library",
+    "root": "Asset library root",
+    "rootHelp": "Choose the Brown-Dust-2-Asset root folder. Models, illustrations, textures, audio and backgrounds are read from it as needed.",
     "choose": "Choose folder"
   },
   "skillAudio": {

@@ -55,12 +55,10 @@
     "minigameAudio": "启用小游戏音效",
     "datingAudio": "启用约会互动的音效和语音",
     "assetPaths": {
-        "title": "资产目录",
-        "datingAudio": "约会音频目录",
-        "datingAudioHelp": "优先从该目录读取以 SHA-256 命名的 OGG 文件。",
-        "gameBackgrounds": "游戏过场背景目录",
-        "gameBackgroundsHelp": "优先从该目录读取以 SHA-256 命名的 WebP 文件。",
-        "choose": "选择文件夹"
+      "title": "资产目录",
+      "root": "素材库根目录",
+      "rootHelp": "选择 Brown-Dust-2-Asset 的根目录，自动按需读取模型、立绘、纹理、音频和背景。",
+      "choose": "选择文件夹"
     },
     "skillAudio": {
         "fullSkillSequence": "完整播放技能",

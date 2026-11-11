@@ -10,6 +10,7 @@ import { RefreshCw, RotateCcw, Search, X } from '@lucide/vue'
 import { useNetworkStatus } from '../../composables/useNetworkStatus'
 import { usePreviewerStore } from '../../stores/previewer'
 import { useUIStore } from '../../stores/ui'
+import { useAssetLibraryStore } from '../../stores/assetLibrary'
 import { NOVEL_BACKGROUNDS, novelThumbnail, loadNovelBackground } from '../../data/novelBackgrounds'
 import NoInternetState from '../NoInternetState.vue'
 
@@ -19,6 +20,7 @@ const emit = defineEmits<{ close: [] }>()
 const { t } = useI18n()
 const previewerStore = usePreviewerStore()
 const uiStore = useUIStore()
+const library = useAssetLibraryStore()
 const { isConnected, isChecking, checkConnection } = useNetworkStatus()
 
 const search = ref('')
@@ -95,7 +97,7 @@ async function apply(id: number | null) {
             </p>
 
             <div class="backgrounds-scroll scrollbar">
-              <NoInternetState v-if="!isConnected" :is-checking="isChecking" @check-connection="checkConnection" />
+              <NoInternetState v-if="!isConnected && !library.activeRoot" :is-checking="isChecking" @check-connection="checkConnection" />
               <p v-else-if="!backgrounds.length" class="backgrounds-empty">{{ t('backgroundsPanel.none') }}</p>
               <div v-else class="backgrounds-grid">
                 <button v-for="id in backgrounds" :key="id" type="button" class="background-item"

@@ -12,6 +12,7 @@ import { useHistory } from "./useHistory";
 import { useLogger } from "./useLogger";
 import { useGameCutscene } from "./useGameCutscene";
 import { useGameBackgroundStore } from "../stores/gameBackgrounds";
+import { useAssetLibraryStore } from '../stores/assetLibrary';
 import { useMinigameInteractions } from "./useMinigameInteractions";
 import { useDatingInteractions } from "./useDatingInteractions";
 import type {
@@ -30,6 +31,7 @@ export function usePreview(
 	playerContainer: Ref<HTMLElement | null>,
 ) {
 	const previewerStore = usePreviewerStore();
+	const library = useAssetLibraryStore();
 
 	const { logMessage } = useLogger();
 	const { addToHistory } = useHistory();
@@ -960,19 +962,21 @@ export function usePreview(
 		initializePlayer(createPlayerConfig(assets), request);
 	}
 
-	function loadSpineFromUrl(
+	async function loadSpineFromUrl(
 		skeletonUrl: string,
 		atlasUrl: string,
 		request: number,
 		fallbackSkeleton?: string,
 		fallbackAtlas?: string,
 	) {
+		await library.ready();
+		if (request !== loadId) return;
 		const config = createPlayerConfig({
-			skeletonFilename: skeletonUrl,
-			atlasFilename: atlasUrl,
+			skeletonFilename: library.url(skeletonUrl),
+			atlasFilename: library.url(atlasUrl),
 		});
 
-		config.error = (_player: SpinePlayer, message: string) => {
+		config.error = async (_player: SpinePlayer, message: string) => {
 			if (request !== loadId) return;
 			loadResults.push(...describeLoadError(message, "online", skeletonUrl));
 
@@ -988,7 +992,7 @@ export function usePreview(
 
 			if (fallbackSkeleton && fallbackAtlas) {
 				try {
-					loadSpineFromUrl(fallbackSkeleton, fallbackAtlas, request);
+					await loadSpineFromUrl(fallbackSkeleton, fallbackAtlas, request);
 				} catch (error) {
 					showError(error, request);
 				}
@@ -1078,9 +1082,10 @@ export function usePreview(
 				? settings.value.background.color
 				: "#00000000";
 
-		if (assetsData.skeletonFilename.endsWith(".json")) {
+		const skeletonPath = assetsData.skeletonFilename.split(/[?#]/)[0]!;
+		if (skeletonPath.endsWith(".json")) {
 			config.jsonUrl = assetsData.skeletonFilename;
-		} else if (assetsData.skeletonFilename.endsWith(".skel")) {
+		} else if (skeletonPath.endsWith(".skel")) {
 			config.skelUrl = assetsData.skeletonFilename;
 		} else {
 			throw new Error(t("preview.unsupportedSkeleton"));
@@ -1474,7 +1479,7 @@ export function usePreview(
 	);
 
 	watch(
-		[source, playerContainer, retryCount],
+		[source, playerContainer, retryCount, () => library.activeRoot],
 		async ([source, container], _previous, onCleanup) => {
 			const request = ++loadId;
 
@@ -1499,7 +1504,7 @@ export function usePreview(
 				if (source.type === "folder") {
 					await loadSpineFromFolder(source.path, request);
 				} else {
-					loadSpineFromUrl(
+					await loadSpineFromUrl(
 						source.skeletonUrl,
 						source.atlasUrl,
 						request,

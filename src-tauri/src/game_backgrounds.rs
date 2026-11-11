@@ -44,13 +44,11 @@ async fn download(hash: &str) -> Result<Vec<u8>, String> {
 }
 
 #[tauri::command]
-pub async fn get_game_background(app: tauri::AppHandle, hash: String, background_directory: String) -> Result<String, String> {
+pub async fn get_game_background(app: tauri::AppHandle, hash: String) -> Result<String, String> {
     if !valid_hash(&hash) { return Err("Invalid background hash".into()); }
     let dir = cache_dir(&app)?;
     let path = dir.join(format!("{hash}.webp"));
-    let local_path = if background_directory.trim().is_empty() { None } else {
-        Some(Path::new(&background_directory).join(format!("{hash}.webp")))
-    };
+    let local_path = crate::asset_library::local_file(&app, &format!("backgrounds/cutscene/{hash}.webp"));
     let data = local_path.as_deref().and_then(|path| read_verified(path, &hash))
         .or_else(|| read_verified(&path, &hash));
     let data = match data {
@@ -69,13 +67,11 @@ pub async fn get_game_background(app: tauri::AppHandle, hash: String, background
 pub fn has_game_backgrounds(
     app: tauri::AppHandle,
     hashes: Vec<String>,
-    background_directory: String,
 ) -> Result<bool, String> {
     let dir = cache_dir(&app)?;
-    let local_dir = Path::new(&background_directory);
     Ok(hashes.iter().all(|hash| valid_hash(hash) && (
         dir.join(format!("{hash}.webp")).is_file()
-            || (!background_directory.trim().is_empty() && local_dir.join(format!("{hash}.webp")).is_file())
+            || crate::asset_library::local_file(&app, &format!("backgrounds/cutscene/{hash}.webp")).is_some()
     )))
 }
 

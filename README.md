@@ -26,7 +26,7 @@ The mod folder must include:
 
 ### Skill animation and audio preview
 
-Choose **Play Full Skill** in the animation list to play the cut animations in natural name order. Turn off **Loop Animation** to play the sequence once.
+Choose an animation or create a custom sequence in the animation list. Turn off **Loop Animation** to play the sequence once. The automatic **Play Full Skill** menu entry has been removed.
 
 To add audio, choose a folder containing extracted `.ogg`, `.mp3`, or `.wav` clips. In automatic mode, clips are matched to Spine event audio paths or animation names. Selecting a clip in **Full-sequence audio** plays that clip from the start of the full sequence.
 
@@ -52,3 +52,11 @@ These runtimes are licensed under their own terms, and **you must have a valid S
 ## License
 
 Licensed under the [MIT License](LICENSE).
+
+## Local asset library (local builds)
+
+In Settings, choose the Brown-Dust-2-Asset **root folder** (for example `F:\Neowiz\Brown-Dust-2-Asset-master`). Preview reads Spine skeletons, atlases, textures, illustration thumbnails, dating audio, cutscene backgrounds and story backgrounds from that root as needed. Missing files retain the existing online fallback. Dating audio and hashed cutscene backgrounds are verified before use.
+
+The previous separate audio/background paths are inferred into the root setting when possible. Asset data stays in the selected repository; choosing a root does not copy or modify it.
+
+Validation: `node --test tests/asset-library-urls.test.mjs`, `cargo test --release --lib`, and `pnpm build`.

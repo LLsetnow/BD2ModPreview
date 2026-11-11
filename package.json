@@ -1,7 +1,7 @@
 {
   "name": "bd2modpreview",
   "private": true,
-  "version": "1.0.5-beta.1",
+  "version": "1.0.5-local.1",
   "type": "module",
   "scripts": {
     "dev": "vite",

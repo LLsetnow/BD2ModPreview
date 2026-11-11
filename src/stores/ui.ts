@@ -11,7 +11,6 @@ export const useUIStore = defineStore('ui', () => {
 
   const minigameAudio = useLocalStorage('MINIGAME_AUDIO', true)
   const datingAudio = useLocalStorage('DATING_AUDIO', true)
-  const datingAudioDirectory = useLocalStorage('DATING_AUDIO_DIRECTORY', 'F:\\Neowiz\\Brown-Dust-2-Asset-master\\audio\\dating')
   const datingPointStyle = useLocalStorage('DATING_POINT_STYLE', { clickColor: '#ffffff', dragColor: '#ffffff', size: 100 }, { mergeDefaults: true })
 
   const theme = useLocalStorage('APP_THEME', 'dark-3')
@@ -126,7 +125,6 @@ export const useUIStore = defineStore('ui', () => {
   return {
     datingPointStyle,
     datingAudio,
-    datingAudioDirectory,
     minigameAudio,
     machineId,
     loadMachineId,

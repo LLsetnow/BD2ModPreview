@@ -13,6 +13,7 @@ import { open as openDialog } from '@tauri-apps/plugin-dialog'
 
 import { useUIStore } from '../../stores/ui'
 import { useGameBackgroundStore } from '../../stores/gameBackgrounds'
+import { useAssetLibraryStore } from '../../stores/assetLibrary'
 import { usePreviewerStore } from '../../stores/previewer'
 import { useLogger } from '../../composables/useLogger'
 
@@ -21,6 +22,9 @@ const emit = defineEmits<{ close: [] }>()
 const uiStore = useUIStore()
 const previewerStore = usePreviewerStore()
 const gameBackgrounds = useGameBackgroundStore()
+const assetLibrary = useAssetLibraryStore()
+const assetRootDraft = ref(assetLibrary.rootDirectory)
+watch(() => assetLibrary.rootDirectory, value => { assetRootDraft.value = value })
 const { availableLocales, t, te } = useI18n()
 const { logMessage } = useLogger()
 
@@ -82,13 +86,13 @@ function openLogs() {
   uiStore.openLogs()
 }
 
-async function chooseAssetDirectory(kind: 'datingAudio' | 'gameBackground') {
-  const current = kind === 'datingAudio' ? uiStore.datingAudioDirectory : gameBackgrounds.backgroundDirectory
+function applyAssetRoot() { assetLibrary.rootDirectory = assetRootDraft.value.trim() }
+async function chooseAssetDirectory() {
   try {
-    const selected = await openDialog({ directory: true, multiple: false, defaultPath: current })
+    const selected = await openDialog({ directory: true, multiple: false, defaultPath: assetLibrary.rootDirectory })
     if (typeof selected !== 'string') return
-    if (kind === 'datingAudio') uiStore.datingAudioDirectory = selected
-    else gameBackgrounds.backgroundDirectory = selected
+    assetRootDraft.value = selected
+    applyAssetRoot()
   } catch (error) {
     logMessage(`Failed to select asset directory: ${error}`, 'error')
   }
@@ -248,20 +252,13 @@ watch(() => props.show, async (show) => {
               <section class="asset-path-settings">
                 <h3>{{ t('assetPaths.title') }}</h3>
                 <label class="settings-field">
-                  <span>{{ t('assetPaths.datingAudio') }}<small>{{ t('assetPaths.datingAudioHelp') }}</small></span>
+                  <span>{{ t('assetPaths.root') }}<small>{{ t('assetPaths.rootHelp') }}</small></span>
                   <div class="asset-path-control">
-                    <input v-model="uiStore.datingAudioDirectory" type="text" spellcheck="false" />
+                    <input v-model="assetRootDraft" type="text" spellcheck="false" @change="applyAssetRoot" @keydown.enter="applyAssetRoot" />
                     <button type="button" :aria-label="t('assetPaths.choose')" :title="t('assetPaths.choose')"
-                      @click="chooseAssetDirectory('datingAudio')"><FolderOpen :size="16" /></button>
+                      @click="chooseAssetDirectory"><FolderOpen :size="16" /></button>
                   </div>
-                </label>
-                <label class="settings-field">
-                  <span>{{ t('assetPaths.gameBackgrounds') }}<small>{{ t('assetPaths.gameBackgroundsHelp') }}</small></span>
-                  <div class="asset-path-control">
-                    <input v-model="gameBackgrounds.backgroundDirectory" type="text" spellcheck="false" />
-                    <button type="button" :aria-label="t('assetPaths.choose')" :title="t('assetPaths.choose')"
-                      @click="chooseAssetDirectory('gameBackground')"><FolderOpen :size="16" /></button>
-                  </div>
+                  <small v-if="assetLibrary.error" role="alert">{{ assetLibrary.error }}</small>
                 </label>
               </section>
               <section v-if="uiStore.isSupporter" class="supporter-section">

@@ -12,6 +12,7 @@ import { RadioGroup, RadioGroupOption } from '@headlessui/vue'
 import { useLogger } from '../composables/useLogger'
 import { usePreviewerStore } from '../stores/previewer'
 import { useCharactersStore } from '../stores/characters'
+import { useAssetLibraryStore } from '../stores/assetLibrary'
 import NoInternetState from './NoInternetState.vue'
 import { useNetworkStatus } from '../composables/useNetworkStatus'
 import { Character } from '../types/character'
@@ -41,6 +42,7 @@ const alreadyOpened = ref(false)
 const { logMessage } = useLogger()
 const previewerStore = usePreviewerStore()
 const charactersStore = useCharactersStore()
+const library = useAssetLibraryStore()
 
 const draggedCharacter = ref<Character | null>(null)
 type MinigameCard = MinigameEntry & { character: Character; title: string; thumbnail: string }
@@ -120,7 +122,7 @@ const filteredMinigames = computed(() => {
 		const character = charactersStore.characters.find(char => char.costume_id === game.costumeId)
 		if (!character) return []
 		const title = `${charactersStore.getLocalizedName(character.character_name)} - ${charactersStore.getLocalizedName(character.costume_name)}`
-		const thumbnail = `https://cdn.jsdelivr.net/gh/bruhnn/Brown-Dust-2-Asset@master/ui/illust/illust_inven_char/${character.assets.character_image}`
+		const thumbnail = library.url(`https://cdn.jsdelivr.net/gh/bruhnn/Brown-Dust-2-Asset@master/ui/illust/illust_inven_char/${character.assets.character_image}`)
 		return `${title} ${game.name}`.toLowerCase().includes(search) ? [{ ...game, character, title, thumbnail }] : []
 	})
 	if (sortValue.value === 'a-z') items.sort((a, b) => a.title.localeCompare(b.title))
@@ -232,14 +234,14 @@ function getThumbnail(character: Character) {
 
 	if (!imageKey || !character.assets[imageKey.image]) {
 		logMessage(`Invalid Character Data. Could not find image for ${charactersStore.getLocalizedName(character.character_name)} - ${charactersStore.getLocalizedName(character.costume_name)} (${character.id}) ${typeSelected.value} type.`, "error")
-		return `${baseUrl}/illust_simple_char/illust_simple_char000201_2.png`
+		return library.url(`${baseUrl}/illust_simple_char/illust_simple_char000201_2.png`)
 	}
 	// standind and dating show the character image
 	// cutscene shows the skill preview image
 	if (imageKey.key === "standing" || imageKey.key === "dating_id") {
-		return `${baseUrl}/illust_inven_char/${character.assets[imageKey.image]}`
+		return library.url(`${baseUrl}/illust_inven_char/${character.assets[imageKey.image]}`)
 	} else if (imageKey.key === "cutscene") {
-		return `${baseUrl}/illust_skill_char/${character.assets[imageKey.image]}`
+		return library.url(`${baseUrl}/illust_skill_char/${character.assets[imageKey.image]}`)
 	}
 }
 
@@ -336,11 +338,11 @@ onMounted(async () => {
 						<div class="search-icon">
 							<Search :size="24" />
 						</div>
-						<input :disabled="!isConnected" type="search" v-model="searchValue"
+						<input :disabled="!isConnected && !library.activeRoot" type="search" v-model="searchValue"
 							:placeholder="t('characterList.searchPlaceholder')" class="search-input" />
 					</div>
 					<div class="sort-field">
-						<select v-model="sortValue" :disabled="!isConnected" class="sort-select">
+						<select v-model="sortValue" :disabled="!isConnected && !library.activeRoot" class="sort-select">
 							<option value="newest">{{ t('characterList.sort.newest') }}</option>
 							<option value="oldest">{{ t('characterList.sort.oldest') }}</option>
 							<option value="a-z">{{ t('characterList.sort.a_z') }}</option>
@@ -360,7 +362,7 @@ onMounted(async () => {
 			</div>
 
 			<div class="character-scroll scrollbar">
-				<NoInternetState v-if="!isConnected" :is-checking="isChecking" @check-connection="checkConnection" />
+				<NoInternetState v-if="!isConnected && !library.activeRoot" :is-checking="isChecking" @check-connection="checkConnection" />
 
 				<template v-else-if="typeSelected === 'minigames'">
 					<div v-if="!filteredMinigames.length" class="characters-empty">{{ t('characterList.noCharactersFound') }}</div>

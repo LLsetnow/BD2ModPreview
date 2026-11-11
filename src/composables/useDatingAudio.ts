@@ -2,17 +2,18 @@ import { onScopeDispose, ref, watch } from "vue";
 import { invoke } from "@tauri-apps/api/core";
 import { useLogger } from "./useLogger";
 import { useUIStore } from "../stores/ui";
+import { useAssetLibraryStore } from '../stores/assetLibrary';
 import type { DatingPoint, DatingAudio } from "../types/dating";
 
 const downloads = new Map<string, Promise<string>>();
 
-function download(hash: string, audioDirectory: string) {
-	const key = `${audioDirectory}|${hash}`;
+function download(hash: string, libraryRoot: string) {
+	const key = `${libraryRoot}|${hash}`;
 	let request = downloads.get(key);
 	if (!request) {
 		request = invoke<{ data: string; failures: string[] }>(
 			"get_dating_audio",
-			{ hash, audioDirectory },
+			{ hash },
 		).then((result) => {
 			for (const failure of result.failures)
 				useLogger().logMessage(
@@ -29,6 +30,7 @@ function download(hash: string, audioDirectory: string) {
 
 export function useDatingAudio() {
 	const ui = useUIStore();
+	const library = useAssetLibraryStore();
 	let scene: DatingAudio | undefined;
 	let context: AudioContext | null = null;
 	let generation = 0;
@@ -90,7 +92,8 @@ export function useDatingAudio() {
 				const hash = hashes[next++];
 				try {
 					if (!buffers.has(hash)) {
-						const encoded = await download(hash, ui.datingAudioDirectory);
+						await library.ready();
+						const encoded = await download(hash, library.activeRoot);
 						if (current !== preloadId || !ui.datingAudio) return;
 						context ??= new AudioContext();
 						const bytes = Uint8Array.from(atob(encoded), (char) =>
