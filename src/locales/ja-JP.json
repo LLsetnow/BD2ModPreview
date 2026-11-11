@@ -54,6 +54,14 @@
     },
     "minigameAudio": "ミニゲームの効果音を有効にする",
     "datingAudio": "デートインタラクションの効果音とボイスを有効にする",
+    "assetPaths": {
+        "title": "アセットフォルダー",
+        "datingAudio": "デート音声フォルダー",
+        "datingAudioHelp": "このフォルダー内の SHA-256 名の OGG ファイルを優先して読み込みます。",
+        "gameBackgrounds": "ゲームカットシーン背景フォルダー",
+        "gameBackgroundsHelp": "このフォルダー内の SHA-256 名の WebP ファイルを優先して読み込みます。",
+        "choose": "フォルダーを選択"
+    },
     "skillAudio": {
         "fullSkillSequence": "スキル全体を再生",
         "chooseFolder": "音声フォルダーを選択",
@@ -168,6 +176,9 @@
         "syncGroup": "同期グループ {group}。同じ番号のプレビューは操作を共有します。もう一度クリックすると解除します。",
         "datingInteractions": "デートのインタラクション",
         "datingSupportMessage": "BD2ModManager と BD2ModPreview は無料です。デートのインタラクションは支援者へのお礼として用意しました。活動を応援していただける方は、Ko-fi または AFDIAN からご支援いただけます。",
+        "exportDating": "インタラクション JSON を保存…",
+        "datingExported": "インタラクションをエクスポートしました",
+        "datingExportFailed": "エクスポートに失敗しました。ログを確認してください",
         "showInteractionAreas": "操作エリアを表示",
         "gameCutscene": "ゲーム内カットシーン（プレビュー）",
         "cutsceneIncomplete": "一部のカットシーン要素が不足しています。",

@@ -1,6 +1,6 @@
 use base64::{engine::general_purpose::STANDARD, Engine};
 use sha2::{Digest, Sha256};
-use std::{fs, path::PathBuf, time::Duration};
+use std::{fs, path::{Path, PathBuf}, time::Duration};
 use tauri::Manager;
 
 const SOURCES: [&str; 2] = [
@@ -10,6 +10,15 @@ const SOURCES: [&str; 2] = [
 
 fn cache_dir(app: &tauri::AppHandle) -> Result<PathBuf, String> {
     Ok(app.path().app_cache_dir().map_err(|e| e.to_string())?.join("game-backgrounds"))
+}
+
+fn valid_hash(hash: &str) -> bool {
+    hash.len() == 64 && hash.bytes().all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
+}
+
+fn read_verified(path: &Path, hash: &str) -> Option<Vec<u8>> {
+    let data = fs::read(path).ok()?;
+    (hex::encode(Sha256::digest(&data)) == hash).then_some(data)
 }
 
 async fn download(hash: &str) -> Result<Vec<u8>, String> {
@@ -35,12 +44,18 @@ async fn download(hash: &str) -> Result<Vec<u8>, String> {
 }
 
 #[tauri::command]
-pub async fn get_game_background(app: tauri::AppHandle, hash: String) -> Result<String, String> {
+pub async fn get_game_background(app: tauri::AppHandle, hash: String, background_directory: String) -> Result<String, String> {
+    if !valid_hash(&hash) { return Err("Invalid background hash".into()); }
     let dir = cache_dir(&app)?;
     let path = dir.join(format!("{hash}.webp"));
-    let data = match fs::read(&path) {
-        Ok(data) => data,
-        Err(_) => {
+    let local_path = if background_directory.trim().is_empty() { None } else {
+        Some(Path::new(&background_directory).join(format!("{hash}.webp")))
+    };
+    let data = local_path.as_deref().and_then(|path| read_verified(path, &hash))
+        .or_else(|| read_verified(&path, &hash));
+    let data = match data {
+        Some(data) => data,
+        None => {
             let data = download(&hash).await?;
             fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
             fs::write(&path, &data).map_err(|e| e.to_string())?;
@@ -54,11 +69,14 @@ pub async fn get_game_background(app: tauri::AppHandle, hash: String) -> Result<
 pub fn has_game_backgrounds(
     app: tauri::AppHandle,
     hashes: Vec<String>,
+    background_directory: String,
 ) -> Result<bool, String> {
     let dir = cache_dir(&app)?;
-    Ok(hashes
-        .iter()
-        .all(|hash| dir.join(format!("{hash}.webp")).exists()))
+    let local_dir = Path::new(&background_directory);
+    Ok(hashes.iter().all(|hash| valid_hash(hash) && (
+        dir.join(format!("{hash}.webp")).is_file()
+            || (!background_directory.trim().is_empty() && local_dir.join(format!("{hash}.webp")).is_file())
+    )))
 }
 
 #[tauri::command]

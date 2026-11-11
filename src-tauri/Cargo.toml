@@ -5,6 +5,10 @@ description = "A minimal Spine animation viewer used internally by BD2ModManager
 authors = ["bruhnn"]
 edition = "2021"
 
+[features]
+default = ["custom-protocol"]
+custom-protocol = ["tauri/custom-protocol"]
+
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [lib]

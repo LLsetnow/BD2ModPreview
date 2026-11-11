@@ -2,6 +2,7 @@ mod commands;
 mod ipc;
 mod download;
 mod dating_audio;
+mod dating_export;
 mod game_backgrounds;
 mod errors;
 mod types;
@@ -84,6 +85,7 @@ pub fn run() {
             ipc::connect_to_bd2mm,
             ipc::enable_mod_on_bd2mm,
             dating_audio::get_dating_audio,
+            dating_export::export_dating_scene,
             game_backgrounds::get_game_background,
             game_backgrounds::get_game_background_cache_size,
             game_backgrounds::has_game_backgrounds,

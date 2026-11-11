@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
 import { getVersion } from "@tauri-apps/api/app";
-import { onScopeDispose, shallowRef } from "vue";
+import { onScopeDispose, ref, shallowRef } from "vue";
 import { useUIStore } from "./ui";
 import { useLogger } from "../composables/useLogger";
 import type { DatingScene } from "../types/dating";
@@ -9,6 +9,7 @@ export const useDatingScenesStore = defineStore("datingScenes", () => {
 	const { logMessage } = useLogger();
 
 	const scenes = shallowRef<{ [key: string]: DatingScene }>({})
+	const expiresAt = ref(0)
 	const cacheKey = "DATING_SCENES_CACHE"
 
 	let pending: Promise<void> | null = null
@@ -17,6 +18,7 @@ export const useDatingScenesStore = defineStore("datingScenes", () => {
 	function clearCache() {
 		clearTimeout(expiration)
 		scenes.value = {}
+		expiresAt.value = 0
 		try {
 			localStorage.removeItem(cacheKey)
 		} catch (error) {
@@ -24,12 +26,13 @@ export const useDatingScenesStore = defineStore("datingScenes", () => {
 		}
 	}
 
-	function expireAt(expiresAt: number) {
+	function expireAt(value: number) {
 		clearTimeout(expiration)
+		expiresAt.value = value
 
 		expiration = setTimeout(
 			clearCache,
-			Math.max(0, expiresAt - Date.now()),
+			Math.max(0, value - Date.now()),
 		)
 	}
 
@@ -128,7 +131,9 @@ export const useDatingScenesStore = defineStore("datingScenes", () => {
 
 	onScopeDispose(() => clearTimeout(expiration))
 
-	return { 
-    scenes: scenes,
-     load };
+	return {
+		scenes,
+		expiresAt,
+		load,
+	};
 });

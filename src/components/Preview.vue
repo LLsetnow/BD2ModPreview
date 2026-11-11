@@ -3,7 +3,7 @@
   lang="ts"
 >
 import { useI18n } from "vue-i18n"
-import { WifiOff, FileQuestion, ImageOff, FileWarning, CircleAlert, Ellipsis, Scan, Camera, ExternalLink, Flame, GripVertical, PanelRightClose, PanelBottomClose, Play, Pause, Repeat, Hand, Eye, EyeOff, Check, Circle, LoaderCircle, Clapperboard, Images, ChevronDown, ChevronRight, FolderOpen, Focus, Image, Layers, Maximize, Palette, Shirt, Pencil, Plus, RotateCcw, SkipBack, Trash2, X } from "@lucide/vue"
+import { WifiOff, FileQuestion, ImageOff, FileWarning, CircleAlert, Ellipsis, Scan, Camera, ExternalLink, Flame, GripVertical, PanelRightClose, PanelBottomClose, Play, Pause, Repeat, Hand, Eye, EyeOff, Check, Circle, LoaderCircle, Clapperboard, Images, ChevronDown, ChevronRight, FolderOpen, Focus, Image, Layers, Maximize, Palette, Shirt, Pencil, Plus, RotateCcw, SkipBack, Trash2, X, Download } from "@lucide/vue"
 import { autoUpdate, flip, offset, shift, useFloating } from "@floating-ui/vue"
 import { onClickOutside, useTimeoutFn } from "@vueuse/core"
 import { computed, nextTick, ref, useTemplateRef, watch } from "vue"
@@ -15,6 +15,7 @@ import type { AnimationSequence, AudioAsset } from "../types/spine"
 import { useModManagerStore } from "../stores/modManager"
 import { usePreviewerStore } from "../stores/previewer"
 import { useUIStore } from "../stores/ui"
+import { useDatingScenesStore } from "../stores/datingScenes"
 
 import { open, save } from "@tauri-apps/plugin-dialog"
 import { writeFile } from "@tauri-apps/plugin-fs"
@@ -41,6 +42,9 @@ const props = defineProps<{
 
 const previewerStore = usePreviewerStore()
 const uiStore = useUIStore()
+const datingScenesStore = useDatingScenesStore()
+const datingExportBusy = ref(false)
+const datingExportMessage = ref("")
 const datingButton = ref<HTMLElement | null>(null)
 const datingTooltip = ref<HTMLElement | null>(null)
 const datingTooltipOpen = ref(false)
@@ -92,6 +96,7 @@ const {
   datingGauge,
   datingGaugeRange,
   isDating,
+  datingSceneId,
   datingAvailable,
   datingEnabled,
   showDatingPoints,
@@ -134,6 +139,36 @@ const { isDragging, dropTarget, startDrag, moveDrag, finishDrag, cancelDrag } = 
 const modManager = useModManagerStore()
 const { history } = useHistory()
 const { logMessage } = useLogger()
+
+watch(datingSceneId, () => { datingExportMessage.value = "" })
+const isDatingSceneId = (id: string) => /^illust_dating[1-9]\d*$/.test(id)
+
+async function exportCurrentDatingScene() {
+  const id = datingSceneId.value
+  if (!uiStore.isSupporter || !datingAvailable.value || !id || !isDatingSceneId(id)) return
+  const expiresAtMs = datingScenesStore.expiresAt
+  if (expiresAtMs <= Date.now()) return
+  datingExportBusy.value = true
+  datingExportMessage.value = ""
+  try {
+    const scene = datingScenesStore.scenes[id]
+    if (!scene) throw new Error(`Missing authorized dating scene: ${id}`)
+    const target = await save({
+      title: t("preview.exportDating"),
+      defaultPath: `${id}.json`,
+      filters: [{ name: "JSON", extensions: ["json"] }],
+    })
+    if (!target) return
+    const path = await invoke<string>("export_dating_scene", { path: target, sceneId: id, expiresAtMs, scene })
+    logMessage(`Exported dating interaction JSON to ${path}`, "info")
+    datingExportMessage.value = t("preview.datingExported")
+  } catch (error) {
+    datingExportMessage.value = t("preview.datingExportFailed")
+    logMessage(`Failed to export dating interaction: ${String(error)}`, "error")
+  } finally {
+    datingExportBusy.value = false
+  }
+}
 
 const animationsOpen = ref(false)
 const sequenceEditorOpen = ref(false)
@@ -898,6 +933,13 @@ const poseErrorMessage = computed(() => {
         @click="datingAvailable && (stopSequence(), datingEnabled = !datingEnabled)">
         <Hand :size="16" aria-hidden="true" /><span class="playback-label">{{ t('preview.datingInteractions') }}</span>
       </button>
+      <button v-if="datingAvailable && datingSceneId && isDatingSceneId(datingSceneId)"
+        type="button" class="dating-interactions-button" :disabled="datingExportBusy"
+        :title="t('preview.exportDating')" :aria-label="t('preview.exportDating')"
+        @click="exportCurrentDatingScene">
+        <Download :size="16" aria-hidden="true" /><span class="playback-label">{{ t('preview.exportDating') }}</span>
+      </button>
+      <span v-if="datingExportMessage" class="minigame-hint" role="status">{{ datingExportMessage }}</span>
       <button v-if="minigameAvailable" type="button" :aria-pressed="minigameEnabled" class="dating-interactions-button"
         :aria-label="t('preview.minigameInteractions')" :title="t('preview.minigameInteractions')"
         @click="minigameEnabled = !minigameEnabled">

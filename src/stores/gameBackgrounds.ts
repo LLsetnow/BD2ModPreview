@@ -12,6 +12,7 @@ export interface BackgroundPrompt {
 export const useGameBackgroundStore = defineStore("gameBackgrounds", () => {
 	const mode = useLocalStorage<"ask" | "always">("GAME_BACKGROUND_MODE", "ask");
 	const showByDefault = useLocalStorage("GAME_BACKGROUND_SHOW", true);
+	const backgroundDirectory = useLocalStorage("GAME_BACKGROUND_DIRECTORY", "F:\\Neowiz\\Brown-Dust-2-Asset-master\\backgrounds\\cutscene");
 	const cacheSize = ref(0);
 	const prompt = ref<BackgroundPrompt | null>(null);
 	const decided = new Set<string>();
@@ -19,11 +20,12 @@ export const useGameBackgroundStore = defineStore("gameBackgrounds", () => {
 	let pendingApply: (() => void) | null = null;
 
 	function load(hash: string): Promise<string> {
-		let request = loaded.get(hash);
+		const key = `${backgroundDirectory.value}|${hash}`;
+		let request = loaded.get(key);
 		if (!request) {
-			request = invoke<string>("get_game_background", { hash });
-			request.then(refreshCacheSize, () => loaded.delete(hash));
-			loaded.set(hash, request);
+			request = invoke<string>("get_game_background", { hash, backgroundDirectory: backgroundDirectory.value });
+			request.then(refreshCacheSize, () => loaded.delete(key));
+			loaded.set(key, request);
 		}
 		return request;
 	}
@@ -47,7 +49,7 @@ export const useGameBackgroundStore = defineStore("gameBackgrounds", () => {
 		if (!showByDefault.value || decided.has(key)) return;
 		if (
 			mode.value === "always" ||
-			(await invoke<boolean>("has_game_backgrounds", { hashes }))
+			(await invoke<boolean>("has_game_backgrounds", { hashes, backgroundDirectory: backgroundDirectory.value }))
 		) {
 			decided.add(key);
 			apply();
@@ -69,5 +71,5 @@ export const useGameBackgroundStore = defineStore("gameBackgrounds", () => {
 		pendingApply = null;
 	}
 
-	return { mode, showByDefault, cacheSize, prompt, load, refreshCacheSize, clearCache, offer, answer };
+	return { mode, showByDefault, backgroundDirectory, cacheSize, prompt, load, refreshCacheSize, clearCache, offer, answer };
 });

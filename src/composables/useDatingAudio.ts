@@ -6,12 +6,13 @@ import type { DatingPoint, DatingAudio } from "../types/dating";
 
 const downloads = new Map<string, Promise<string>>();
 
-function download(hash: string) {
-	let request = downloads.get(hash);
+function download(hash: string, audioDirectory: string) {
+	const key = `${audioDirectory}|${hash}`;
+	let request = downloads.get(key);
 	if (!request) {
 		request = invoke<{ data: string; failures: string[] }>(
 			"get_dating_audio",
-			{ hash },
+			{ hash, audioDirectory },
 		).then((result) => {
 			for (const failure of result.failures)
 				useLogger().logMessage(
@@ -20,8 +21,8 @@ function download(hash: string) {
 				);
 			return result.data;
 		});
-		downloads.set(hash, request);
-		request.finally(() => downloads.delete(hash)).catch(() => {});
+		downloads.set(key, request);
+		request.finally(() => downloads.delete(key)).catch(() => {});
 	}
 	return request;
 }
@@ -89,7 +90,7 @@ export function useDatingAudio() {
 				const hash = hashes[next++];
 				try {
 					if (!buffers.has(hash)) {
-						const encoded = await download(hash);
+						const encoded = await download(hash, ui.datingAudioDirectory);
 						if (current !== preloadId || !ui.datingAudio) return;
 						context ??= new AudioContext();
 						const bytes = Uint8Array.from(atob(encoded), (char) =>

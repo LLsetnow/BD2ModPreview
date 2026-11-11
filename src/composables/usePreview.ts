@@ -1643,6 +1643,7 @@ export function usePreview(
 		datingGauge: datingInteraction.gauge,
 		datingGaugeRange: datingInteraction.gaugeRange,
 		isDating: datingInteraction.isDating,
+		datingSceneId: datingInteraction.sceneId,
 		datingAvailable: datingInteraction.available,
 		datingEnabled: datingInteraction.enabled,
 		showDatingPoints: datingInteraction.showPoints,

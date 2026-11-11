@@ -2,13 +2,14 @@
   setup
   lang="ts"
 >
-import { ExternalLink, RotateCcw, Bug, Check, ChevronDown, ChevronRight, CircleQuestionMark, Heart, ScrollText, Sparkles, X } from "@lucide/vue"
+import { ExternalLink, RotateCcw, Bug, Check, ChevronDown, ChevronRight, CircleQuestionMark, FolderOpen, Heart, ScrollText, Sparkles, X } from "@lucide/vue"
 import { Dialog, DialogPanel, DialogTitle, Menu, MenuButton, MenuItems, MenuItem, TransitionRoot, TransitionChild } from '@headlessui/vue'
 import { onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { openUrl } from '@tauri-apps/plugin-opener'
 import { getCurrentWindow } from '@tauri-apps/api/window'
 import { getVersion } from "@tauri-apps/api/app"
+import { open as openDialog } from '@tauri-apps/plugin-dialog'
 
 import { useUIStore } from '../../stores/ui'
 import { useGameBackgroundStore } from '../../stores/gameBackgrounds'
@@ -79,6 +80,18 @@ async function changeAlwaysOnTop(event: Event) {
 function openLogs() {
   emit('close')
   uiStore.openLogs()
+}
+
+async function chooseAssetDirectory(kind: 'datingAudio' | 'gameBackground') {
+  const current = kind === 'datingAudio' ? uiStore.datingAudioDirectory : gameBackgrounds.backgroundDirectory
+  try {
+    const selected = await openDialog({ directory: true, multiple: false, defaultPath: current })
+    if (typeof selected !== 'string') return
+    if (kind === 'datingAudio') uiStore.datingAudioDirectory = selected
+    else gameBackgrounds.backgroundDirectory = selected
+  } catch (error) {
+    logMessage(`Failed to select asset directory: ${error}`, 'error')
+  }
 }
 
 function formatSize(bytes: number) {
@@ -231,6 +244,25 @@ watch(() => props.show, async (show) => {
                   <button type="button" :disabled="!gameBackgrounds.cacheSize" @click="gameBackgrounds.clearCache()">{{
                     t('gameBackgroundSettings.clear') }}</button>
                 </div>
+              </section>
+              <section class="asset-path-settings">
+                <h3>{{ t('assetPaths.title') }}</h3>
+                <label class="settings-field">
+                  <span>{{ t('assetPaths.datingAudio') }}<small>{{ t('assetPaths.datingAudioHelp') }}</small></span>
+                  <div class="asset-path-control">
+                    <input v-model="uiStore.datingAudioDirectory" type="text" spellcheck="false" />
+                    <button type="button" :aria-label="t('assetPaths.choose')" :title="t('assetPaths.choose')"
+                      @click="chooseAssetDirectory('datingAudio')"><FolderOpen :size="16" /></button>
+                  </div>
+                </label>
+                <label class="settings-field">
+                  <span>{{ t('assetPaths.gameBackgrounds') }}<small>{{ t('assetPaths.gameBackgroundsHelp') }}</small></span>
+                  <div class="asset-path-control">
+                    <input v-model="gameBackgrounds.backgroundDirectory" type="text" spellcheck="false" />
+                    <button type="button" :aria-label="t('assetPaths.choose')" :title="t('assetPaths.choose')"
+                      @click="chooseAssetDirectory('gameBackground')"><FolderOpen :size="16" /></button>
+                  </div>
+                </label>
               </section>
               <section v-if="uiStore.isSupporter" class="supporter-section">
                 <div class="supporter-heading">
@@ -687,8 +719,46 @@ select {
 }
 
 .dating-point-settings,
-.game-background-settings {
+.game-background-settings,
+.asset-path-settings {
   padding: 0 24px 24px;
+}
+
+.asset-path-control {
+	display: flex;
+	gap: 8px;
+}
+
+.asset-path-control input {
+	min-width: 0;
+	flex: 1;
+	height: 32px;
+	padding: 0 10px;
+	border: 1px solid var(--border-default);
+	border-radius: 4px;
+	background: var(--surface-input);
+	color: var(--text-primary);
+	font: inherit;
+}
+
+.asset-path-control button {
+	width: 36px;
+	height: 32px;
+	flex-shrink: 0;
+	display: grid;
+	place-items: center;
+	border: 1px solid var(--border-default);
+	border-radius: 4px;
+	background: var(--surface-input);
+	color: var(--text-primary);
+	cursor: pointer;
+}
+
+.settings-field > span small {
+	display: block;
+	color: var(--text-secondary);
+	font-size: 12px;
+	line-height: 1.5;
 }
 
 .background-cache {

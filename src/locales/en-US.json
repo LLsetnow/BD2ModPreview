@@ -50,6 +50,14 @@
   "datingAudioStatus": { "loading": "Loading audio {loaded}/{total}", "completed": "Audio loading completed", "failed": "Audio loaded {loaded}/{total}. Some files could not be loaded." },
   "minigameAudio": "Enable sounds for minigames",
   "datingAudio": "Enable sounds and voices for dating interactions",
+  "assetPaths": {
+    "title": "Asset folders",
+    "datingAudio": "Dating audio folder",
+    "datingAudioHelp": "Reads SHA-256-named OGG files from this folder first.",
+    "gameBackgrounds": "Game cutscene backgrounds folder",
+    "gameBackgroundsHelp": "Reads SHA-256-named WebP files from this folder first.",
+    "choose": "Choose folder"
+  },
   "skillAudio": {
     "fullSkillSequence": "Play Full Skill",
     "chooseFolder": "Choose Audio Folder",
@@ -61,21 +69,21 @@
   },
   "gameBackgroundPrompt": {
     "title": "Show the cutscene background?",
-    "message": "This cutscene has its animated background from the game ({count} images, {size}, downloaded once). You can also play the cutscene without it.",
+    "message": "This cutscene has its animated background from the game ({count} images, {size}). Local files are used first; missing images are downloaded and cached.",
     "hint": "You can turn the background on or off at any time with the Background button in the preview controls.",
     "remember": "Remember my choice",
-    "yes": "Download and show",
+    "yes": "Load and show",
     "no": "Play without background"
   },
   "gameBackgroundSettings": {
     "title": "Cutscene backgrounds",
     "show": "Show the cutscene background in game cutscenes",
     "showHelp": "Off: cutscenes play without the background. You can still turn it on from the Background button.",
-    "mode": "Downloading the background images",
+    "mode": "When images are missing from the local folder",
     "ask": "Ask me first",
     "always": "Download automatically",
-    "cache": "Downloaded: {size}",
-    "clear": "Clear downloads"
+    "cache": "Downloaded cache: {size}",
+    "clear": "Clear cache"
   },
     "datingPointSettings": {"click": "Click points", "drag": "Drag points", "colorHelp": "Color of the indicator and area box.", "size": "Point size", "sizeHelp": "Changes the indicator size, not the interaction area.", "reset": "Reset to default"},
     "supporter": {
@@ -163,6 +171,9 @@
         "syncGroups": "Sync group",
         "syncGroup": "Sync group {group}. Previews with the same number share controls. Click again to unlink.",
         "datingInteractions": "Dating interactions",
+        "exportDating": "Export interaction JSON…",
+        "datingExported": "Interaction exported",
+        "datingExportFailed": "Export failed; see the log",
         "datingSupportMessage": "BD2ModManager and BD2ModPreview are free. Dating interactions are a thank-you to supporters. If you'd like to support my work, you can donate through Ko-fi or AFDIAN.",
         "showInteractionAreas": "Show interaction areas",
         "showInteractionPoints": "Show interaction points",
@@ -212,8 +223,8 @@
         "storyBackground": "Background {number}",
         "storyBackgroundHint": "A scenery background from the game. The full image downloads once when selected.",
         "gameBackgroundImages": "Cutscene backgrounds",
-        "gameBackgroundImageHint": "Use this image from the game cutscene as the background. It downloads once.",
-        "gameBackgroundHint": "The game's own animated background for this cutscene. It appears when you pick In-game cutscene in the animation menu; the images download once.",
+        "gameBackgroundImageHint": "Use this image from the game cutscene as the background. Local files are used first; missing images are downloaded once.",
+        "gameBackgroundHint": "The game's own animated background for this cutscene. It appears when you pick In-game cutscene in the animation menu; local files are used first and missing images download once.",
         "removeImage": "Remove image",
         "color": "Color",
         "createSequence": "Create sequence",

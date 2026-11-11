@@ -67,6 +67,7 @@ export function useDatingInteractions(
 	const dragPositions = new Map<string, { x: number; y: number }>();
 	const available = ref(false);
 	const isDating = ref(false);
+	const sceneId = ref<string | null>(null);
 	let skeletonFilename = "";
 	const enabled = ref(false);
 	const showPoints = ref(false);
@@ -238,6 +239,7 @@ export function useDatingInteractions(
 			.toLowerCase();
 
 		const scene = name ? (datingScenesStore.scenes[name] ?? null) : null;
+		sceneId.value = name ?? null;
 
 		currentDating = scene;
 
@@ -1209,6 +1211,7 @@ export function useDatingInteractions(
 		group,
 		selectGroup,
 		isDating,
+		sceneId,
 		available,
 		enabled,
 		showPoints,

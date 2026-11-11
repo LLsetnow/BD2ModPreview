@@ -54,6 +54,14 @@
     },
     "minigameAudio": "启用小游戏音效",
     "datingAudio": "启用约会互动的音效和语音",
+    "assetPaths": {
+        "title": "资产目录",
+        "datingAudio": "约会音频目录",
+        "datingAudioHelp": "优先从该目录读取以 SHA-256 命名的 OGG 文件。",
+        "gameBackgrounds": "游戏过场背景目录",
+        "gameBackgroundsHelp": "优先从该目录读取以 SHA-256 命名的 WebP 文件。",
+        "choose": "选择文件夹"
+    },
     "skillAudio": {
         "fullSkillSequence": "完整播放技能",
         "chooseFolder": "选择音频文件夹",
@@ -168,6 +176,9 @@
         "syncGroup": "同步组 {group}。编号相同的预览共享控制，再次点击可取消同步。",
         "datingInteractions": "约会互动",
         "datingSupportMessage": "BD2ModManager 和 BD2ModPreview 都是免费的。约会互动是我为感谢赞助者准备的功能。如果你愿意支持我的工作，可以通过 Ko-fi 或爱发电赞助。",
+        "exportDating": "导出互动 JSON…",
+        "datingExported": "互动已导出",
+        "datingExportFailed": "导出失败，请查看日志",
         "showInteractionAreas": "显示互动区域",
         "gameCutscene": "游戏过场动画（预览）",
         "cutsceneIncomplete": "部分过场动画元素缺失。",
