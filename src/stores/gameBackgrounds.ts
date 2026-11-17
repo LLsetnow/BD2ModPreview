@@ -13,6 +13,7 @@ export interface BackgroundPrompt {
 export const useGameBackgroundStore = defineStore("gameBackgrounds", () => {
 	const mode = useLocalStorage<"ask" | "always">("GAME_BACKGROUND_MODE", "ask");
 	const showByDefault = useLocalStorage("GAME_BACKGROUND_SHOW", true);
+	const showIllustrationByDefault = useLocalStorage("ILLUSTRATION_BACKGROUND_SHOW", true);
 	const library = useAssetLibraryStore();
 	const cacheSize = ref(0);
 	const prompt = ref<BackgroundPrompt | null>(null);
@@ -74,5 +75,5 @@ export const useGameBackgroundStore = defineStore("gameBackgrounds", () => {
 	}
 
 	watch(() => library.activeRoot, () => { loaded.clear(); decided.clear(); prompt.value = null; pendingApply = null });
-	return { mode, showByDefault, cacheSize, prompt, load, refreshCacheSize, clearCache, offer, answer };
+	return { mode, showByDefault, showIllustrationByDefault, cacheSize, prompt, load, refreshCacheSize, clearCache, offer, answer };
 });

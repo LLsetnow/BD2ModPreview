@@ -11,6 +11,7 @@ export type PreviewBackground =
 	| { type: "theme" }
 	| { type: "color"; color: string }
 	| { type: "image"; path: string }
+	| { type: "illustration" }
 	| { type: "game" };
 
 export interface Previewer {

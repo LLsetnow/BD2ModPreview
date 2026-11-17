@@ -1,5 +1,6 @@
 import { computed, ref } from "vue";
 import { useLogger } from "./useLogger";
+import { useGameCutsceneAudio } from "./useGameCutsceneAudio";
 import type { SpinePlayer } from "../types/spine";
 import { loadCutscene } from "../utils/cutsceneData";
 import { useGameBackgroundStore } from "../stores/gameBackgrounds";
@@ -160,8 +161,10 @@ export function useGameCutscene(
 	let assetManagers: any[] = [];
 	let generation = 0;
 	let time = 0;
+	const audio = useGameCutsceneAudio(() => time);
 
 	function dispose() {
+		audio.clear();
 		generation++;
 		scene = null;
 		available.value = false;
@@ -306,6 +309,7 @@ export function useGameCutscene(
 			);
 		backgroundImages.value = imagesOf(timeline);
 		cutsceneId.value = id;
+		audio.load(id, timeline, end);
 		available.value = true;
 	}
 
@@ -381,20 +385,32 @@ export function useGameCutscene(
 		time = 0;
 		animationTime = -1;
 		active.value = true;
+		audio.start();
+	}
+
+	function stop() {
+		active.value = false;
+		audio.stop();
 	}
 
 	function seek(value: number) {
 		if (!scene) return;
 		time = Math.max(0, Math.min(value, end));
+		audio.seek();
 	}
 
 	function update(delta: number, loop: boolean) {
 		if (!active.value || !scene) return time;
-		time += delta;
+		time = audio.position(time + delta);
 		if (loop && time > end) {
 			time %= end;
 			animationTime = -1;
-		} else time = Math.min(time, end);
+			audio.seek();
+		} else if (time >= end) {
+			time = end;
+			audio.finish();
+		}
+		audio.update(time);
 		return time;
 	}
 
@@ -1147,6 +1163,9 @@ void main() {
 		cutsceneId,
 		load,
 		start,
+		stop,
+		audio,
+		setPaused: audio.pause,
 		seek,
 		update,
 		draw,

@@ -74,14 +74,16 @@
     "no": "Play without background"
   },
   "gameBackgroundSettings": {
-    "title": "Cutscene backgrounds",
+    "title": "Preview backgrounds",
     "show": "Show the cutscene background in game cutscenes",
     "showHelp": "Off: cutscenes play without the background. You can still turn it on from the Background button.",
     "mode": "When images are missing from the local folder",
     "ask": "Ask me first",
     "always": "Download automatically",
     "cache": "Downloaded cache: {size}",
-    "clear": "Clear cache"
+    "clear": "Clear cache",
+    "illustrationShow": "Automatically show matching illustration backgrounds",
+    "illustrationShowHelp": "Use the costume’s original background for standing illustrations. You can switch it off in each preview."
   },
     "datingPointSettings": {"click": "Click points", "drag": "Drag points", "colorHelp": "Color of the indicator and area box.", "size": "Point size", "sizeHelp": "Changes the indicator size, not the interaction area.", "reset": "Reset to default"},
     "supporter": {
@@ -292,7 +294,9 @@
         "loopNumber": "Loop animation {number}",
         "delayNumber": "Start after for animation {number}",
         "durationNumber": "Play for animation {number}",
-        "removeAnimation": "Remove animation {number}"
+        "removeAnimation": "Remove animation {number}",
+        "illustrationBackground": "Illustration background",
+        "illustrationBackgroundHint": "Show or hide the matching background for this costume illustration"
     },
     "common": {
         "viewLogs": "View Logs",
@@ -522,5 +526,38 @@
         "clear": "Clear logs",
         "copy": "Copy logs",
         "empty": "No logs available."
-    }
+    },
+  "standingInteraction": {
+    "title": "Standing illustration interactions",
+    "enabled": "Play a motion when tapping a character",
+    "hint": "Tap the character for a motion and a random voice line. Drag to pan.",
+    "audio": "Character voice",
+    "voiceLanguage": "Voice language",
+    "japanese": "Japanese",
+    "korean": "Korean",
+    "volume": "Voice volume",
+    "ready": "Tap the character for a motion and voice ({language}, {count} lines)",
+    "fallback": "This character has no voice in the selected language. Using {language} ({count} lines).",
+    "muted": "Character voice muted. Click to enable.",
+    "loading": "Loading character voices…",
+    "missing": "Choose an asset library containing audio/standing in Settings.",
+    "failed": "Could not load character voice. Check the audio files in your asset library."
+  },
+  "skillCutsceneAudio": {
+    "title": "Skill cutscene audio",
+    "voice": "Play skill voices",
+    "sfx": "Play skill sound effects",
+    "sfxVolume": "Skill sound effect volume",
+    "sharedLanguage": "Skill voices share the voice language and volume settings above with portraits.",
+    "loading": "Loading skill audio…",
+    "ready": "Skill audio: {language}",
+    "sfxOnly": "Skill sound effects ready",
+    "mixed": "Japanese / Korean",
+    "muted": "Skill audio is off",
+    "missing": "Local audio for this skill is missing",
+    "failed": "Could not load skill audio",
+    "mismatch": "Audio does not match this cutscene version",
+    "partial": "{count} skill audio clips are missing",
+    "fallback": "{count} voice clips use the fallback language"
+  }
 }

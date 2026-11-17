@@ -7,14 +7,16 @@ import {
 import { computed, onUnmounted, ref, Ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { invoke } from "@tauri-apps/api/core";
-import { usePreviewerStore, type PreviewControl } from "../stores/previewer";
+import { usePreviewerStore, type PreviewControl, type PreviewBackground } from "../stores/previewer";
 import { useHistory } from "./useHistory";
 import { useLogger } from "./useLogger";
 import { useGameCutscene } from "./useGameCutscene";
 import { useGameBackgroundStore } from "../stores/gameBackgrounds";
+import { useIllustrationBackground } from "./useIllustrationBackground";
 import { useAssetLibraryStore } from '../stores/assetLibrary';
 import { useMinigameInteractions } from "./useMinigameInteractions";
 import { useDatingInteractions } from "./useDatingInteractions";
+import { useStandingInteractions } from "./useStandingInteractions";
 import type {
 	SpineAssetsData,
 	SpinePlayer,
@@ -85,6 +87,7 @@ export function usePreview(
 	const skin = ref("");
 	const hiddenAttachments = new Map<any, any>();
 	let loadId = 0;
+	let playbackChoice = 0;
 	let spinePlayer: SpinePlayer | null = null;
 	let audioStateListener: any = null;
 	let activeAudio: HTMLAudioElement | null = null;
@@ -104,6 +107,29 @@ export function usePreview(
 	const title = computed(() => preview.value?.title ?? "");
 	const source = computed(() => preview.value?.source ?? null);
 	const settings = computed(() => preview.value?.settings ?? null);
+	const illustrationBackground = useIllustrationBackground(
+		computed<PreviewBackground | null>({
+			get: () => settings.value?.background ?? null,
+			set: (value) => { if (settings.value && value) settings.value.background = value; },
+		}),
+		() => gameBackgrounds.showIllustrationByDefault,
+		(message) => logMessage(message, "warning"),
+	);
+	const backgroundImagePath = computed(() => {
+		const background = settings.value?.background;
+		return background?.type === "image" ? background.path
+			: background?.type === "illustration" ? illustrationBackground.image.value : "";
+	});
+
+	const standing = useStandingInteractions({
+		canInteract: () => !activeSequence.value && !cutscene.active.value && !datingInteraction.enabled.value && !minigame.enabled.value,
+		isPaused: () => settings.value?.paused ?? false,
+		isSlotVisible: (name) => !hiddenLayers.value.includes(name),
+		beforePlay: () => {
+			stopActiveAudio();
+			if (settings.value) { settings.value.paused = false; settings.value.followGlobalAnimation = false; }
+		},
+	});
 
 	watch(
 		() => cutscene.backgroundInfo.value,
@@ -143,6 +169,7 @@ export function usePreview(
 
 	function applyControl(control: PreviewControl) {
 		if (!spinePlayer || !settings.value) return;
+		if (["animation", "sequence", "cutscene"].includes(control.type)) playbackChoice++;
 
 		switch (control.type) {
 			case "pause":
@@ -158,6 +185,7 @@ export function usePreview(
 					previewerStore.globalAnimation ||
 					allAnimations.value[0];
 				if (!allAnimations.value.includes(animation)) return;
+				standing.cancelMotion();
 				stopGameCutscene();
 				stopSequence();
 				settings.value.followGlobalAnimation = control.value === "";
@@ -227,7 +255,8 @@ export function usePreview(
 		return 1600 / Math.min(width, height);
 	}
 
-	function playGameCutscene() {
+	function playGameCutscene(startPaused = false) {
+		standing.stop();
 		if (!spinePlayer || !settings.value || !cutscene.available.value) return;
 		stopSequence();
 		stopActiveAudio();
@@ -240,7 +269,8 @@ export function usePreview(
 		cutscene.start();
 		playbackTime.value = 0;
 		duration.value = cutscene.duration;
-		settings.value!.paused = false;
+		settings.value!.paused = startPaused;
+		if (startPaused) cutscene.setPaused(true);
 		offerGameBackground();
 	}
 
@@ -303,7 +333,7 @@ export function usePreview(
 
 	function stopGameCutscene() {
 		if (!cutscene.active.value) return;
-		cutscene.active.value = false;
+		cutscene.stop();
 		camera = previousCamera;
 		previousCamera = null;
 	}
@@ -381,12 +411,12 @@ export function usePreview(
 
 		audioStateListener = {
 			start: (entry: any) => {
-				if (isManualSequenceAudio) return;
+				if (isManualSequenceAudio || standing.ownsPlayback.value || cutscene.active.value) return;
 				const asset = findAudioAsset([entry?.animation?.name]);
 				if (asset) void playAudioAsset(asset.relativePath);
 			},
 			event: (_entry: any, event: any) => {
-				if (isManualSequenceAudio) return;
+				if (isManualSequenceAudio || standing.ownsPlayback.value || cutscene.active.value) return;
 				const eventData = event?.data;
 				const asset = findAudioAsset([
 					eventData?.audioPath,
@@ -401,6 +431,7 @@ export function usePreview(
 	}
 
 	function playSequence(sequence: AnimationSequence) {
+		standing.stop();
 		if (!spinePlayer || !settings.value) return;
 		stopActiveAudio();
 		const selectedAudio = settings.value.sequenceAudioPath
@@ -622,10 +653,10 @@ export function usePreview(
 		cameraListeners = new AbortController();
 
 		const { signal } = cameraListeners;
-		let drag: { id: number; x: number; y: number } | null = null;
+		let drag: { id: number; x: number; y: number; startX: number; startY: number; click: boolean; moved: boolean } | null = null;
 
 		canvas.style.touchAction = "none";
-		window.addEventListener("blur", () => minigame.cancel(), { signal });
+		window.addEventListener("blur", () => { minigame.cancel(); drag = null; standing.stopAudio(); }, { signal });
 
 		canvas.addEventListener(
 			"pointerdown",
@@ -649,6 +680,8 @@ export function usePreview(
 					id: event.pointerId,
 					x: event.clientX,
 					y: event.clientY,
+					startX: event.clientX, startY: event.clientY,
+					click: event.button === 0 && standing.hitTest(event), moved: false,
 				};
 			},
 			{ signal },
@@ -665,6 +698,10 @@ export function usePreview(
 					return;
 				if (!camera || !drag || drag.id !== event.pointerId) return;
 
+				if (!drag.moved) {
+					if (Math.hypot(event.clientX - drag.startX, event.clientY - drag.startY) <= 6) return;
+					drag.moved = true;
+				}
 				const dx = event.clientX - drag.x;
 				const dy = event.clientY - drag.y;
 
@@ -694,8 +731,10 @@ export function usePreview(
 				if (minigame.pointerUp(event) || datingInteraction.pointerUp(event))
 					return;
 				if (drag?.id !== event.pointerId) return;
-				canvas.releasePointerCapture(event.pointerId);
+				const pressed = drag;
 				drag = null;
+				canvas.releasePointerCapture(event.pointerId);
+				if (pressed.click && !pressed.moved && Math.hypot(event.clientX - pressed.startX, event.clientY - pressed.startY) <= 6 && standing.hitTest(event)) standing.click();
 			},
 			{ signal },
 		);
@@ -784,6 +823,7 @@ export function usePreview(
 	}
 
 	function restart() {
+		standing.stop();
 		if (!spinePlayer) return;
 
 		if (datingInteraction.enabled.value) {
@@ -838,6 +878,7 @@ export function usePreview(
 	}
 
 	function seekTo(value: number) {
+		standing.cancelMotion();
 		if (!spinePlayer || !duration.value || minigame.enabled.value) return;
 		datingInteraction.reset();
 		settings.value!.paused = true;
@@ -894,7 +935,7 @@ export function usePreview(
 
 		if (cutscene.active.value) {
 			playbackTime.value = cutscene.update(
-				delta,
+				paused.value ? 0 : delta,
 				settings.value?.loopAnimation ?? true,
 			);
 
@@ -1289,17 +1330,28 @@ export function usePreview(
 			player.config.skelUrl ?? player.config.jsonUrl ?? "",
 		);
 
+		const currentLoad = loadId, initialChoice = playbackChoice;
 		cutscene
 			.load(player, player.config.skelUrl ?? player.config.jsonUrl ?? "")
+			.then(() => {
+				// Prefer the complete game performance once its timeline is ready.
+				if (spinePlayer === player && loadId === currentLoad &&
+					playbackChoice === initialChoice && cutscene.available.value)
+					playGameCutscene(paused.value);
+			})
 			.catch((error) =>
 				logMessage(`Cutscene could not be loaded: ${error}`, "error"),
 			);
+		illustrationBackground.load(player.config.skelUrl ?? player.config.jsonUrl ?? "");
+		standing.load(player, player.config.skelUrl ?? player.config.jsonUrl ?? "");
 
 		if (paused.value) player.pause();
 		else player.play();
 	}
 
 	function destroyPlayer() {
+		standing.clear();
+		illustrationBackground.clear();
 		stopActiveAudio();
 		isManualSequenceAudio = false;
 		sequenceAudioStep = -1;
@@ -1412,6 +1464,7 @@ export function usePreview(
 	watch(() => previewerStore.restartCount, restart);
 
 	watch(currentAnimation, (animation) => {
+		standing.cancelMotion();
 		stopGameCutscene();
 
 		if (
@@ -1441,9 +1494,10 @@ export function usePreview(
 	});
 
 	watch(paused, (paused) => {
+		if (cutscene.active.value) cutscene.setPaused(paused);
 		if (paused) spinePlayer?.pause();
 		else spinePlayer?.play();
-	});
+	}, { flush: "sync" });
 
 	watch(
 		() => settings.value?.loopAnimation,
@@ -1452,7 +1506,7 @@ export function usePreview(
 				if (
 					track &&
 					!datingInteraction.enabled.value &&
-					!minigame.enabled.value
+					!minigame.enabled.value && !standing.playingMotion.value
 				)
 
 					track.loop = loop;
@@ -1574,13 +1628,13 @@ export function usePreview(
 	async function takeScreenshot() {
 		const canvas = spinePlayer?.canvas;
 		const frame = await captureFrame();
-		const background = settings.value?.background;
+		const imagePath = backgroundImagePath.value;
 		const panel = playerContainer.value?.closest(".preview-panel");
 
-		if (!canvas || background?.type !== "image" || !panel) return toPng(frame);
+		if (!canvas || !imagePath || !panel) return toPng(frame);
 
 		try {
-			const image = await loadImage(background.path);
+			const image = await loadImage(imagePath);
 			const canvasRect = canvas.getBoundingClientRect();
 			const panelRect = panel.getBoundingClientRect();
 			const ratio = frame.width / canvasRect.width;
@@ -1616,6 +1670,13 @@ export function usePreview(
 	onUnmounted(destroyPlayer);
 
 	return {
+		standingAvailable: standing.available,
+		standingVoiceCount: standing.voiceCount,
+		standingVoiceLanguage: standing.voiceLanguage,
+		standingAudioStatus: standing.audioStatus,
+		illustrationBackground: illustrationBackground.info,
+		illustrationBackgroundLoading: illustrationBackground.loading,
+		backgroundImagePath,
 		error,
 		errorInfo,
 		isLoading,
@@ -1624,6 +1685,10 @@ export function usePreview(
 		cutsceneAvailable: cutscene.available,
 		cutsceneActive: cutscene.active,
 		cutsceneIncomplete: cutscene.incomplete,
+		cutsceneAudioStatus: cutscene.audio.status,
+		cutsceneAudioLanguage: cutscene.audio.language,
+		cutsceneAudioFallbackCount: cutscene.audio.fallbackCount,
+		cutsceneAudioMissingCount: cutscene.audio.missingCount,
 		gameBackgroundImages: cutscene.backgroundImages,
 		loadingGameImage,
 		selectGameBackgroundImage,

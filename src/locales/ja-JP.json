@@ -55,10 +55,10 @@
     "minigameAudio": "ミニゲームの効果音を有効にする",
     "datingAudio": "デートインタラクションの効果音とボイスを有効にする",
     "assetPaths": {
-      "title": "アセットライブラリ",
-      "root": "素材ライブラリのルート",
-      "rootHelp": "Brown-Dust-2-Asset のルートフォルダーからモデル、イラスト、テクスチャ、音声、背景を必要に応じて読み込みます。",
-      "choose": "フォルダーを選択"
+        "title": "アセットライブラリ",
+        "root": "素材ライブラリのルート",
+        "rootHelp": "Brown-Dust-2-Asset のルートフォルダーからモデル、イラスト、テクスチャ、音声、背景を必要に応じて読み込みます。",
+        "choose": "フォルダーを選択"
     },
     "skillAudio": {
         "fullSkillSequence": "スキル全体を再生",
@@ -204,6 +204,8 @@
         "resetCamera": "カメラをリセット",
         "skin": "スキン",
         "none": "なし",
+        "illustrationBackground": "立ち絵の背景",
+        "illustrationBackgroundHint": "現在の衣装に対応する立ち絵の背景を表示・非表示",
         "background": "背景",
         "selectColor": "色を選択",
         "selectImage": "画像を選択",
@@ -519,7 +521,9 @@
         "no": "背景なしで再生"
     },
     "gameBackgroundSettings": {
-        "title": "カットシーンの背景",
+        "illustrationShow": "立ち絵に対応する背景を自動表示",
+        "illustrationShowHelp": "衣装の立ち絵に元の背景を表示します。各プレビューで個別にオフにできます。",
+        "title": "プレビューの背景",
         "show": "ゲーム内カットシーンの背景を表示する",
         "showHelp": "無効にすると背景なしで再生します。「背景」ボタンから有効にすることもできます。",
         "mode": "ローカルフォルダーに画像がない場合",
@@ -547,5 +551,38 @@
         "clear": "ログを消去",
         "copy": "ログをコピー",
         "empty": "ログはありません。"
-    }
+    },
+    "standingInteraction": {
+        "title": "立ち絵のタップ操作",
+        "enabled": "キャラクターのタップでモーション再生",
+        "hint": "キャラクターをタップするとモーションとランダムなボイスを再生します。ドラッグで移動します。",
+        "audio": "キャラクターボイス",
+        "voiceLanguage": "ボイス言語",
+        "japanese": "日本語",
+        "korean": "韓国語",
+        "volume": "ボイス音量",
+        "ready": "タップでモーションとボイスを再生（{language}、{count}件）",
+        "fallback": "選択した言語のボイスがありません。{language}（{count}件）を使用します。",
+        "muted": "ボイスはミュート中です。クリックで有効にします。",
+        "loading": "ボイスを読み込み中…",
+        "missing": "設定で audio/standing を含む素材ライブラリを選択してください。",
+        "failed": "ボイスを読み込めません。素材ライブラリの音声ファイルを確認してください。"
+    },
+  "skillCutsceneAudio": {
+    "title": "スキル演出の音声",
+    "voice": "スキルボイスを再生",
+    "sfx": "スキル効果音を再生",
+    "sfxVolume": "スキル効果音の音量",
+    "sharedLanguage": "スキルボイスには上の立ち絵と共通の音声言語・音量設定を使用します。",
+    "loading": "スキル音声を読み込み中…",
+    "ready": "スキル音声：{language}",
+    "sfxOnly": "スキル効果音の準備完了",
+    "mixed": "日本語／韓国語",
+    "muted": "スキル音声はオフです",
+    "missing": "このスキルのローカル音声がありません",
+    "failed": "スキル音声を読み込めませんでした",
+    "mismatch": "音声と演出のバージョンが一致しません",
+    "partial": "スキル音声が {count} 件不足しています",
+    "fallback": "ボイス {count} 件は代替言語を使用しています"
+  }
 }

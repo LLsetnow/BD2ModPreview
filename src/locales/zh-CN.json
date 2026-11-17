@@ -55,10 +55,10 @@
     "minigameAudio": "启用小游戏音效",
     "datingAudio": "启用约会互动的音效和语音",
     "assetPaths": {
-      "title": "资产目录",
-      "root": "素材库根目录",
-      "rootHelp": "选择 Brown-Dust-2-Asset 的根目录，自动按需读取模型、立绘、纹理、音频和背景。",
-      "choose": "选择文件夹"
+        "title": "资产目录",
+        "root": "素材库根目录",
+        "rootHelp": "选择 Brown-Dust-2-Asset 的根目录，自动按需读取模型、立绘、纹理、音频和背景。",
+        "choose": "选择文件夹"
     },
     "skillAudio": {
         "fullSkillSequence": "完整播放技能",
@@ -204,6 +204,8 @@
         "resetCamera": "重置相机",
         "skin": "皮肤",
         "none": "无",
+        "illustrationBackground": "立绘背景",
+        "illustrationBackgroundHint": "显示或隐藏当前服装对应的立绘背景",
         "background": "背景",
         "selectColor": "选择颜色",
         "selectImage": "选择图片",
@@ -519,7 +521,9 @@
         "no": "不显示背景"
     },
     "gameBackgroundSettings": {
-        "title": "技能动画背景",
+        "illustrationShow": "自动显示立绘对应的背景",
+        "illustrationShowHelp": "预览立绘时使用这套服装的原生背景，也可以在每个预览窗口中单独关闭。",
+        "title": "预览背景",
         "show": "在游戏内技能动画中显示背景",
         "showHelp": "关闭后，技能动画不显示背景。仍可通过“背景”按钮开启。",
         "mode": "本地文件夹缺少图片时",
@@ -547,5 +551,38 @@
         "clear": "清空日志",
         "copy": "复制日志",
         "empty": "暂无日志。"
-    }
+    },
+    "standingInteraction": {
+        "title": "立绘点击互动",
+        "enabled": "点击人物播放动作",
+        "hint": "点按人物播放一次动作和随机台词；拖拽平移画面。",
+        "audio": "角色语音",
+        "voiceLanguage": "语音语言",
+        "japanese": "日语",
+        "korean": "韩语",
+        "volume": "语音音量",
+        "ready": "点按人物播放动作与语音（{language}，{count} 条）",
+        "fallback": "所选语言暂无当前角色语音，使用{language}（{count} 条）",
+        "muted": "角色语音已静音，点击开启",
+        "loading": "正在载入角色语音…",
+        "missing": "暂无角色语音，请在设置中选择含 audio/standing 的素材库",
+        "failed": "角色语音读取失败，请检查素材库中的音频文件"
+    },
+  "skillCutsceneAudio": {
+    "title": "技能演出音频",
+    "voice": "播放技能台词",
+    "sfx": "播放技能音效",
+    "sfxVolume": "技能音效音量",
+    "sharedLanguage": "技能台词与立绘共用上方的语音语言和语音音量设置。",
+    "loading": "正在加载技能音频…",
+    "ready": "技能音频：{language}",
+    "sfxOnly": "技能音效已就绪",
+    "mixed": "日语／韩语",
+    "muted": "技能音频已关闭",
+    "missing": "此技能的本地音频缺失",
+    "failed": "技能音频加载失败",
+    "mismatch": "音频与当前演出版本不匹配",
+    "partial": "有 {count} 段技能音频缺失",
+    "fallback": "有 {count} 段台词使用备用语言"
+  }
 }

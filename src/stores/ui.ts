@@ -11,6 +11,13 @@ export const useUIStore = defineStore('ui', () => {
 
   const minigameAudio = useLocalStorage('MINIGAME_AUDIO', true)
   const datingAudio = useLocalStorage('DATING_AUDIO', true)
+  const standingInteractions = useLocalStorage('STANDING_INTERACTIONS', true)
+  const standingAudio = useLocalStorage('STANDING_AUDIO', true)
+  const standingVoiceLanguage = useLocalStorage<'ja-JP' | 'ko-KR'>('STANDING_VOICE_LANGUAGE', 'ja-JP')
+  const standingVoiceVolume = useLocalStorage('STANDING_VOICE_VOLUME', 80)
+  const skillVoiceAudio = useLocalStorage('SKILL_VOICE_AUDIO', true)
+  const skillSfxAudio = useLocalStorage('SKILL_SFX_AUDIO', true)
+  const skillSfxVolume = useLocalStorage('SKILL_SFX_VOLUME', 80)
   const datingPointStyle = useLocalStorage('DATING_POINT_STYLE', { clickColor: '#ffffff', dragColor: '#ffffff', size: 100 }, { mergeDefaults: true })
 
   const theme = useLocalStorage('APP_THEME', 'dark-3')
@@ -125,6 +132,13 @@ export const useUIStore = defineStore('ui', () => {
   return {
     datingPointStyle,
     datingAudio,
+    standingInteractions,
+    standingAudio,
+    standingVoiceLanguage,
+    standingVoiceVolume,
+    skillVoiceAudio,
+    skillSfxAudio,
+    skillSfxVolume,
     minigameAudio,
     machineId,
     loadMachineId,

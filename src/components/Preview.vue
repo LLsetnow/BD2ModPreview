@@ -3,7 +3,7 @@
   lang="ts"
 >
 import { useI18n } from "vue-i18n"
-import { WifiOff, FileQuestion, ImageOff, FileWarning, CircleAlert, Ellipsis, Scan, Camera, ExternalLink, Flame, GripVertical, PanelRightClose, PanelBottomClose, Play, Pause, Repeat, Hand, Eye, EyeOff, Check, Circle, LoaderCircle, Clapperboard, Images, ChevronDown, ChevronRight, FolderOpen, Focus, Image, Layers, Maximize, Palette, Shirt, Pencil, Plus, RotateCcw, SkipBack, Trash2, X, Download } from "@lucide/vue"
+import { WifiOff, FileQuestion, ImageOff, FileWarning, CircleAlert, Ellipsis, Scan, Camera, ExternalLink, Flame, GripVertical, PanelRightClose, PanelBottomClose, Play, Pause, Repeat, Volume2, VolumeX, Hand, Eye, EyeOff, Check, Circle, LoaderCircle, Clapperboard, Images, ChevronDown, ChevronRight, FolderOpen, Focus, Image, Layers, Maximize, Palette, Shirt, Pencil, Plus, RotateCcw, SkipBack, Trash2, X, Download } from "@lucide/vue"
 import { autoUpdate, flip, offset, shift, useFloating } from "@floating-ui/vue"
 import { onClickOutside, useTimeoutFn } from "@vueuse/core"
 import { computed, nextTick, ref, useTemplateRef, watch } from "vue"
@@ -69,9 +69,20 @@ function toggleGameBackground() {
 const playerContainer = useTemplateRef("player-container")
 
 const {
+  standingAvailable,
+  standingVoiceCount,
+  standingVoiceLanguage,
+  standingAudioStatus,
+  illustrationBackground,
+  illustrationBackgroundLoading,
+  backgroundImagePath,
   cutsceneAvailable,
   cutsceneActive,
   cutsceneIncomplete,
+  cutsceneAudioStatus,
+  cutsceneAudioLanguage,
+  cutsceneAudioFallbackCount,
+  cutsceneAudioMissingCount,
   gameBackgroundImages,
   loadingGameImage,
   selectGameBackgroundImage,
@@ -131,6 +142,20 @@ const {
   stopSequence,
   takeScreenshot,
 } = usePreview(props.previewId, playerContainer)
+
+const standingVoiceHint = computed(() => {
+  if (!uiStore.standingAudio) return t('standingInteraction.muted')
+  if (standingAudioStatus.value === 'loading') return t('standingInteraction.loading')
+  if (standingAudioStatus.value === 'missing' || standingAudioStatus.value === 'idle') return t('standingInteraction.missing')
+  if (standingAudioStatus.value === 'failed') return t('standingInteraction.failed')
+  const language = t(standingVoiceLanguage.value === 'ko-KR' ? 'standingInteraction.korean' : 'standingInteraction.japanese')
+  return t(standingVoiceLanguage.value !== uiStore.standingVoiceLanguage ? 'standingInteraction.fallback' : 'standingInteraction.ready', { language, count: standingVoiceCount.value })
+})
+
+function toggleIllustrationBackground() {
+  if (settings.value) settings.value.background = settings.value.background.type === 'illustration'
+    ? { type: 'theme' } : { type: 'illustration' }
+}
 
 const { isDragging, dropTarget, startDrag, moveDrag, finishDrag, cancelDrag } = usePreviewDrag(({ row, column, newRow }) => {
   previewerStore.movePreview(props.previewId, row, column, newRow)
@@ -265,6 +290,20 @@ function openSequence(index: number | null) {
   animationsOpen.value = false
   sequenceEditorOpen.value = true
 }
+
+const cutsceneAudioMessage = computed(() => {
+  const state = cutsceneAudioStatus.value
+  if (state === 'idle') return ''
+  if (state === 'ready' || state === 'partial') {
+    const language = cutsceneAudioLanguage.value === 'mixed' ? t('skillCutsceneAudio.mixed')
+      : cutsceneAudioLanguage.value ? t(cutsceneAudioLanguage.value === 'ja-JP' ? 'standingInteraction.japanese' : 'standingInteraction.korean') : ''
+    const parts = [language ? t('skillCutsceneAudio.ready', { language }) : t('skillCutsceneAudio.sfxOnly')]
+    if (cutsceneAudioFallbackCount.value) parts.push(t('skillCutsceneAudio.fallback', { count: cutsceneAudioFallbackCount.value }))
+    if (cutsceneAudioMissingCount.value) parts.push(t('skillCutsceneAudio.partial', { count: cutsceneAudioMissingCount.value }))
+    return parts.join(' · ')
+  }
+  return t('skillCutsceneAudio.' + state)
+})
 
 const audioFolderName = computed(() => {
   const folder = settings.value?.audioFolder
@@ -535,8 +574,8 @@ const poseErrorMessage = computed(() => {
     @save="saveSequence" />
   <div :data-preview-id="props.previewId" class="preview-panel" :class="{
     dragging: isDragging,
-  }" :style="settings?.background.type === 'image' ? {
-    backgroundImage: `url('${settings.background.path}')`,
+  }" :style="backgroundImagePath ? {
+    backgroundImage: `url('${backgroundImagePath}')`,
     backgroundSize: 'cover',
     backgroundPosition: 'center',
   } : { background: settings?.background.type === 'color' ? settings.background.color : 'var(--surface-app)' }">
@@ -611,9 +650,10 @@ const poseErrorMessage = computed(() => {
         </div>
       </div>
     </div>
-    <p v-if="cutsceneActive && cutsceneIncomplete" class="cutscene-warning" role="status">
-      {{ t('preview.cutsceneIncomplete') }}
-    </p>
+    <div v-if="cutsceneActive" class="cutscene-notices" role="status">
+      <p v-if="cutsceneIncomplete" class="cutscene-warning">{{ t('preview.cutsceneIncomplete') }}</p>
+      <p v-if="cutsceneAudioMessage" class="cutscene-warning" :data-audio-status="cutsceneAudioStatus">{{ cutsceneAudioMessage }}</p>
+    </div>
     <div v-if="source && error && errorInfo" class="preview-error" role="alert">
       <component :is="errorIcon(errorInfo.cause)" :size="20" class="error-icon" aria-hidden="true" />
       <p class="error-title">{{ t(`loadError.titles.${errorInfo.cause}`) }}</p>
@@ -651,6 +691,7 @@ const poseErrorMessage = computed(() => {
     </div>
     <div v-show="source && !error" class="preview-stage">
       <div ref="player-container" :id="`player-container-${props.previewId}`" tabindex="0" class="player-container"
+        :title="standingAvailable && uiStore.standingInteractions ? t('standingInteraction.hint') : undefined"
         @contextmenu.prevent="openContext" @pointerdown.capture="playerContainer?.focus()" @keydown="onPreviewKeydown"
         @keydown.shift.f10.prevent="openContext" />
       <div v-if="source && isLoading && !error" role="status" class="load-steps">
@@ -810,6 +851,14 @@ const poseErrorMessage = computed(() => {
           <button type="button" role="menuitem" @click="settings.background = { type: 'theme' }; closeContext()">
             <RotateCcw :size="16" /><span>{{ t('preview.resetBackground') }}</span>
           </button>
+          <button v-if="illustrationBackground" type="button" role="menuitemradio"
+            :aria-checked="settings.background.type === 'illustration'" :aria-busy="illustrationBackgroundLoading"
+            :title="t('preview.illustrationBackgroundHint')"
+            @click="toggleIllustrationBackground(); closeContext()">
+            <LoaderCircle v-if="illustrationBackgroundLoading" :size="16" class="load-step-spin" />
+            <Image v-else :size="16" /><span>{{ t('preview.illustrationBackground') }}</span>
+            <Check v-if="settings.background.type === 'illustration'" :size="16" />
+          </button>
           <button v-if="gameBackground" type="button" role="menuitemradio" :aria-checked="settings.background.type === 'game'"
             :title="t('preview.gameBackgroundHint')"
             @click="toggleGameBackground(); closeContext()">
@@ -925,6 +974,21 @@ const poseErrorMessage = computed(() => {
         @click="minigameEnabled = !minigameEnabled">
         <Hand :size="16" aria-hidden="true" /><span class="playback-label">{{ t('preview.minigameInteractions')
         }}</span>
+      </button>
+      <button v-if="standingAvailable" type="button" class="dating-interactions-button"
+        :aria-label="standingVoiceHint" :title="standingVoiceHint" :aria-pressed="uiStore.standingAudio"
+        @click="uiStore.standingAudio = !uiStore.standingAudio">
+        <LoaderCircle v-if="standingAudioStatus === 'loading' && uiStore.standingAudio" :size="16" class="load-step-spin" aria-hidden="true" />
+        <Volume2 v-else-if="uiStore.standingAudio" :size="16" aria-hidden="true" />
+        <VolumeX v-else :size="16" aria-hidden="true" />
+        <span class="playback-label">{{ t('standingInteraction.audio') }}</span>
+      </button>
+      <button v-if="illustrationBackground" type="button" class="dating-interactions-button"
+        :aria-pressed="settings.background.type === 'illustration'" :aria-busy="illustrationBackgroundLoading"
+        :aria-label="t('preview.illustrationBackground')" :title="t('preview.illustrationBackgroundHint')"
+        @click="toggleIllustrationBackground">
+        <LoaderCircle v-if="illustrationBackgroundLoading" :size="16" class="load-step-spin" aria-hidden="true" />
+        <Image v-else :size="16" aria-hidden="true" /><span class="playback-label">{{ t('preview.illustrationBackground') }}</span>
       </button>
       <button v-if="cutsceneActive && gameBackground" type="button" class="dating-interactions-button"
         :aria-pressed="settings.background.type === 'game'" :aria-label="t('preview.gameBackgroundToggleHint')"
@@ -1199,12 +1263,16 @@ const poseErrorMessage = computed(() => {
   display: block;
 }
 
-.cutscene-warning {
+.cutscene-notices {
   position: absolute;
   top: 40px;
   left: 12px;
   right: 12px;
-  margin: 0;
+  pointer-events: none;
+}
+
+.cutscene-warning {
+  margin: 0 0 4px;
   padding: 6px 8px;
   background: var(--surface-panel);
   color: var(--text-secondary);

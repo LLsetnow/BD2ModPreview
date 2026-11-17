@@ -55,10 +55,10 @@
     "minigameAudio": "미니게임 효과음 활성화",
     "datingAudio": "데이트 상호작용의 효과음과 음성 활성화",
     "assetPaths": {
-      "title": "에셋 라이브러리",
-      "root": "에셋 라이브러리 루트",
-      "rootHelp": "Brown-Dust-2-Asset 루트 폴더에서 모델, 일러스트, 텍스처, 오디오 및 배경을 필요할 때 읽습니다。",
-      "choose": "폴더 선택"
+        "title": "에셋 라이브러리",
+        "root": "에셋 라이브러리 루트",
+        "rootHelp": "Brown-Dust-2-Asset 루트 폴더에서 모델, 일러스트, 텍스처, 오디오 및 배경을 필요할 때 읽습니다。",
+        "choose": "폴더 선택"
     },
     "skillAudio": {
         "fullSkillSequence": "스킬 전체 재생",
@@ -204,6 +204,8 @@
         "resetCamera": "카메라 초기화",
         "skin": "스킨",
         "none": "없음",
+        "illustrationBackground": "일러스트 배경",
+        "illustrationBackgroundHint": "현재 의상에 해당하는 일러스트 배경 표시 또는 숨기기",
         "background": "배경",
         "selectColor": "색상 선택",
         "selectImage": "이미지 선택",
@@ -519,7 +521,9 @@
         "no": "배경 없이 재생"
     },
     "gameBackgroundSettings": {
-        "title": "컷신 배경",
+        "illustrationShow": "일러스트에 해당하는 배경 자동 표시",
+        "illustrationShowHelp": "의상 일러스트에 원래 배경을 표시합니다. 각 미리보기에서 개별적으로 끌 수 있습니다.",
+        "title": "미리보기 배경",
         "show": "게임 내 컷신 배경 표시",
         "showHelp": "끄면 컷신이 배경 없이 재생됩니다. “배경” 버튼으로 다시 켤 수 있습니다.",
         "mode": "로컬 폴더에 이미지가 없을 때",
@@ -547,5 +551,38 @@
         "clear": "로그 지우기",
         "copy": "로그 복사",
         "empty": "로그가 없습니다."
-    }
+    },
+    "standingInteraction": {
+        "title": "일러스트 터치 상호작용",
+        "enabled": "캐릭터를 터치하면 모션 재생",
+        "hint": "캐릭터를 터치하면 모션과 무작위 음성이 재생됩니다. 드래그하면 화면이 이동합니다.",
+        "audio": "캐릭터 음성",
+        "voiceLanguage": "음성 언어",
+        "japanese": "일본어",
+        "korean": "한국어",
+        "volume": "음성 볼륨",
+        "ready": "터치하여 모션과 음성 재생 ({language}, {count}개)",
+        "fallback": "선택한 언어의 음성이 없어 {language} 음성을 사용합니다 ({count}개).",
+        "muted": "캐릭터 음소거 중입니다. 클릭하여 켜세요.",
+        "loading": "캐릭터 음성 불러오는 중…",
+        "missing": "설정에서 audio/standing이 포함된 자료 폴더를 선택하세요.",
+        "failed": "캐릭터 음성을 불러올 수 없습니다. 자료 폴더의 음성 파일을 확인하세요."
+    },
+  "skillCutsceneAudio": {
+    "title": "스킬 연출 오디오",
+    "voice": "스킬 음성 재생",
+    "sfx": "스킬 효과음 재생",
+    "sfxVolume": "스킬 효과음 볼륨",
+    "sharedLanguage": "스킬 음성은 위의 일러스트 음성 언어와 볼륨 설정을 함께 사용합니다.",
+    "loading": "스킬 오디오 불러오는 중…",
+    "ready": "스킬 오디오: {language}",
+    "sfxOnly": "스킬 효과음 준비 완료",
+    "mixed": "일본어 / 한국어",
+    "muted": "스킬 오디오가 꺼져 있습니다",
+    "missing": "이 스킬의 로컬 오디오가 없습니다",
+    "failed": "스킬 오디오를 불러오지 못했습니다",
+    "mismatch": "오디오와 연출 버전이 일치하지 않습니다",
+    "partial": "스킬 오디오 {count}개가 없습니다",
+    "fallback": "음성 {count}개에 대체 언어를 사용합니다"
+  }
 }

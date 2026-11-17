@@ -86,6 +86,10 @@ pub async fn serve(root: Option<PathBuf>, encoded: String) -> Response<Vec<u8>> 
         Err(error) => return response(500, "text/plain", error.to_string().into_bytes()),
         _ => {},
     }
+    // Standing and skill audio are supplied by the selected local library. Missing clips must fail promptly.
+    if relative.starts_with("audio/standing/") || relative.starts_with("audio/skills/") {
+        return response(404, "text/plain", format!("Local audio not found: {relative}").into_bytes());
+    }
     // Keep the existing online fallback for incomplete local repositories.
     let client = reqwest::Client::builder().timeout(Duration::from_secs(30)).build().unwrap_or_default();
     for base in ["https://cdn.jsdelivr.net/gh/bruhnn/Brown-Dust-2-Asset@master/", "https://raw.githubusercontent.com/bruhnn/Brown-Dust-2-Asset/refs/heads/master/"] {

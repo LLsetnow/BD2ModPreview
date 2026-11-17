@@ -201,6 +201,52 @@ watch(() => props.show, async (show) => {
                   </label>
                 </section>
               </div>
+              <section class="game-background-settings">
+                <h3>{{ t('standingInteraction.title') }}</h3>
+                <label class="settings-check">
+                  <input v-model="uiStore.standingInteractions" type="checkbox" />
+                  <span>{{ t('standingInteraction.enabled') }}<small>{{ t('standingInteraction.hint') }}</small></span>
+                </label>
+                <label class="settings-check">
+                  <input v-model="uiStore.standingAudio" type="checkbox" />
+                  <span>{{ t('standingInteraction.audio') }}</span>
+                </label>
+                <label class="settings-field">
+                  <span>{{ t('standingInteraction.voiceLanguage') }}</span>
+                  <select v-model="uiStore.standingVoiceLanguage">
+                    <option value="ja-JP">{{ t('standingInteraction.japanese') }}</option>
+                    <option value="ko-KR">{{ t('standingInteraction.korean') }}</option>
+                  </select>
+                </label>
+                <label class="point-setting">
+                  <span>{{ t('standingInteraction.volume') }}</span>
+                  <span class="point-size-control">
+                    <input v-model.number="uiStore.standingVoiceVolume" type="range" min="0" max="100" step="5"
+                      :style="{ '--point-size-progress': uiStore.standingVoiceVolume + '%' }" />
+                    <output>{{ uiStore.standingVoiceVolume }}%</output>
+                  </span>
+                </label>
+              </section>
+              <section class="game-background-settings">
+                <h3>{{ t('skillCutsceneAudio.title') }}</h3>
+                <p class="settings-help">{{ t('skillCutsceneAudio.sharedLanguage') }}</p>
+                <label class="settings-check">
+                  <input v-model="uiStore.skillVoiceAudio" type="checkbox" />
+                  <span>{{ t('skillCutsceneAudio.voice') }}</span>
+                </label>
+                <label class="settings-check">
+                  <input v-model="uiStore.skillSfxAudio" type="checkbox" />
+                  <span>{{ t('skillCutsceneAudio.sfx') }}</span>
+                </label>
+                <label class="point-setting">
+                  <span>{{ t('skillCutsceneAudio.sfxVolume') }}</span>
+                  <span class="point-size-control">
+                    <input v-model.number="uiStore.skillSfxVolume" type="range" min="0" max="100" step="5"
+                      :style="{ '--point-size-progress': uiStore.skillSfxVolume + '%' }" />
+                    <output>{{ uiStore.skillSfxVolume }}%</output>
+                  </span>
+                </label>
+              </section>
               <section class="dating-point-settings">
                 <h3>{{ t('preview.datingInteractions') }}</h3>
                 <label class="settings-check">
@@ -232,6 +278,10 @@ watch(() => props.show, async (show) => {
               </section>
               <section class="game-background-settings">
                 <h3>{{ t('gameBackgroundSettings.title') }}</h3>
+                <label class="settings-check">
+                  <input v-model="gameBackgrounds.showIllustrationByDefault" type="checkbox" />
+                  <span>{{ t('gameBackgroundSettings.illustrationShow') }}<small>{{ t('gameBackgroundSettings.illustrationShowHelp') }}</small></span>
+                </label>
                 <label class="settings-check">
                   <input v-model="gameBackgrounds.showByDefault" type="checkbox" />
                   <span>{{ t('gameBackgroundSettings.show') }}<small>{{ t('gameBackgroundSettings.showHelp') }}</small></span>

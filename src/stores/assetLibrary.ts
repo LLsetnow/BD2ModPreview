@@ -33,5 +33,8 @@ export const useAssetLibraryStore = defineStore('assetLibrary', () => {
     if (!activeRoot.value) return remote
     return libraryAssetUrl(convertFileSrc('', 'bd2library'), activeRoot.value, remote)
   }
-  return { rootDirectory, activeRoot: readonly(activeRoot), error: readonly(error), ready: () => ready, url }
+  function localUrl(relative: string) {
+    return libraryAssetUrl(convertFileSrc('', 'bd2library'), activeRoot.value, 'https://cdn.jsdelivr.net/gh/bruhnn/Brown-Dust-2-Asset@master/' + relative)
+  }
+  return { rootDirectory, activeRoot: readonly(activeRoot), error: readonly(error), ready: () => ready, url, localUrl }
 })
