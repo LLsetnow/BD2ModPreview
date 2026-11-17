@@ -40,7 +40,7 @@ export function useGameCutsceneAudio(getTime: () => number) {
       await library.ready()
       if (current !== generation) return
       if (!library.activeRoot) { status.value = 'missing'; return }
-      const response = await fetch(library.localUrl('audio/skills/timelines/' + loadedId + '.json'), { signal })
+      const response = await fetch(library.localUrl('audio/cutscene/timelines/' + loadedId + '.json'), { signal })
       if (current !== generation) return
       if (response.status === 404) { status.value = 'missing'; return }
       if (!response.ok) throw new Error('Skill timeline HTTP ' + response.status)
@@ -64,7 +64,7 @@ export function useGameCutsceneAudio(getTime: () => number) {
           const file = files[Math.floor(Math.random() * files.length)]!
           let buffer = buffers.get(file)
           if (!buffer) {
-            const r = await fetch(library.localUrl('audio/skills/' + file), { signal })
+            const r = await fetch(library.localUrl('audio/cutscene/' + file), { signal })
             if (!r.ok) throw new Error('Skill audio HTTP ' + r.status)
             buffer = await audioContext().decodeAudioData(await r.arrayBuffer())
             if (current !== generation) return null

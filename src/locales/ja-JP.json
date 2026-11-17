@@ -53,14 +53,7 @@
         "failed": "音声を {loaded}/{total} 読み込みました。一部のファイルを読み込めませんでした。"
     },
     "minigameAudio": "ミニゲームの効果音を有効にする",
-    "datingAudio": "デートインタラクションの効果音とボイスを有効にする",
-    "assetPaths": {
-        "title": "アセットライブラリ",
-        "root": "素材ライブラリのルート",
-        "rootHelp": "Brown-Dust-2-Asset のルートフォルダーからモデル、イラスト、テクスチャ、音声、背景を必要に応じて読み込みます。",
-        "choose": "フォルダーを選択"
-    },
-    "skillAudio": {
+    "datingAudio": "デートインタラクションの効果音とボイスを有効にする",    "skillAudio": {
         "fullSkillSequence": "スキル全体を再生",
         "chooseFolder": "音声フォルダーを選択",
         "changeFolder": "音声フォルダーを変更",
@@ -565,7 +558,7 @@
         "fallback": "選択した言語のボイスがありません。{language}（{count}件）を使用します。",
         "muted": "ボイスはミュート中です。クリックで有効にします。",
         "loading": "ボイスを読み込み中…",
-        "missing": "設定で audio/standing を含む素材ライブラリを選択してください。",
+        "missing": "BD2ModManager の 設定 → 一般 → ディレクトリ で素材ライブラリを設定してください。",
         "failed": "ボイスを読み込めません。素材ライブラリの音声ファイルを確認してください。"
     },
   "skillCutsceneAudio": {

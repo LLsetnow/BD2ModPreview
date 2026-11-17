@@ -6,14 +6,14 @@ use std::io::{Read, Write};
 use std::path::Path;
 use tauri::{AppHandle, Emitter};
 
-const CUTSCENE_URL: &str = "https://raw.githubusercontent.com/bruhnn/Brown-Dust-2-Asset/refs/heads/master/spine/cutscenes/";
+const CUTSCENE_URL: &str = "https://raw.githubusercontent.com/LLsetnow/Brown-Dust-2-Asset/refs/heads/master/spine/cutscenes/";
 const IDLE_URL: &str =
-    "https://raw.githubusercontent.com/bruhnn/Brown-Dust-2-Asset/refs/heads/master/spine/char/";
+    "https://raw.githubusercontent.com/LLsetnow/Brown-Dust-2-Asset/refs/heads/master/spine/char/";
 const NPC_URL: &str =
-    "https://raw.githubusercontent.com/bruhnn/Brown-Dust-2-Asset/refs/heads/master/spine/npc/";
-const ILLUST_DATING_URL: &str = "https://raw.githubusercontent.com/bruhnn/Brown-Dust-2-Asset/refs/heads/master/spine/illust/illust_dating/";
-const ILLUST_SPECIAL_URL: &str = "https://raw.githubusercontent.com/bruhnn/Brown-Dust-2-Asset/refs/heads/master/spine/illust/illust_special/";
-const ILLUST_TALK_URL: &str = "https://raw.githubusercontent.com/bruhnn/Brown-Dust-2-Asset/refs/heads/master/spine/illust/illust_talk/";
+    "https://raw.githubusercontent.com/LLsetnow/Brown-Dust-2-Asset/refs/heads/master/spine/npc/";
+const ILLUST_DATING_URL: &str = "https://raw.githubusercontent.com/LLsetnow/Brown-Dust-2-Asset/refs/heads/master/spine/illust/illust_dating/";
+const ILLUST_SPECIAL_URL: &str = "https://raw.githubusercontent.com/LLsetnow/Brown-Dust-2-Asset/refs/heads/master/spine/illust/illust_special/";
+const ILLUST_TALK_URL: &str = "https://raw.githubusercontent.com/LLsetnow/Brown-Dust-2-Asset/refs/heads/master/spine/illust/illust_talk/";
 
 pub fn download_file(app: AppHandle, url: &str, dest_path: &Path) -> Result<(), DownloadError> {
     app.emit(
@@ -26,7 +26,7 @@ pub fn download_file(app: AppHandle, url: &str, dest_path: &Path) -> Result<(), 
         DownloadError::NetworkError(format!("Failed to emit download-started event: {}", e))
     })?;
 
-    if let Some(relative) = url.strip_prefix("https://raw.githubusercontent.com/bruhnn/Brown-Dust-2-Asset/refs/heads/master/") {
+    if let Some(relative) = url.strip_prefix("https://raw.githubusercontent.com/LLsetnow/Brown-Dust-2-Asset/refs/heads/master/") {
         if let Some(source) = crate::asset_library::local_file(&app, relative) {
             let size = std::fs::copy(&source, dest_path).map_err(|e| {
                 DownloadError::WriteError(format!("Failed to copy '{}' to '{}': {e}", source.display(), dest_path.display()))

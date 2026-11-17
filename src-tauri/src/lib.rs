@@ -63,6 +63,7 @@ pub fn run() {
             });
         })
         .setup(|app| {
+            asset_library::load_shared_asset_library_root(&app.handle());
             #[cfg(windows)]
             if let Some(window) = app.get_webview_window("main") {
                 window.with_webview(|webview| {
@@ -94,12 +95,11 @@ pub fn run() {
             ipc::connect_to_bd2mm,
             ipc::enable_mod_on_bd2mm,
             dating_audio::get_dating_audio,
+            asset_library::get_asset_library_root,
             asset_library::set_asset_library_root,
             dating_export::export_dating_scene,
             game_backgrounds::get_game_background,
-            game_backgrounds::get_game_background_cache_size,
             game_backgrounds::has_game_backgrounds,
-            game_backgrounds::clear_game_background_cache,
             get_machine_id,
             get_user_locale,
             get_spine_assets,

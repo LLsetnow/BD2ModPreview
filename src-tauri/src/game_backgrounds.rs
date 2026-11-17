@@ -4,12 +4,13 @@ use std::{fs, path::{Path, PathBuf}, time::Duration};
 use tauri::Manager;
 
 const SOURCES: [&str; 2] = [
-    "https://cdn.jsdelivr.net/gh/bruhnn/Brown-Dust-2-Asset@master/backgrounds/cutscene/",
-    "https://raw.githubusercontent.com/bruhnn/Brown-Dust-2-Asset/master/backgrounds/cutscene/",
+    "https://cdn.jsdelivr.net/gh/LLsetnow/Brown-Dust-2-Asset@master/backgrounds/cutscene/",
+    "https://raw.githubusercontent.com/LLsetnow/Brown-Dust-2-Asset/master/backgrounds/cutscene/",
 ];
 
-fn cache_dir(app: &tauri::AppHandle) -> Result<PathBuf, String> {
-    Ok(app.path().app_cache_dir().map_err(|e| e.to_string())?.join("game-backgrounds"))
+fn asset_root(app: &tauri::AppHandle) -> Result<PathBuf, String> {
+    app.state::<crate::asset_library::AssetLibrary>().root()
+        .ok_or_else(|| "Choose an asset library directory in BD2ModManager settings".to_string())
 }
 
 fn valid_hash(hash: &str) -> bool {
@@ -46,20 +47,15 @@ async fn download(hash: &str) -> Result<Vec<u8>, String> {
 #[tauri::command]
 pub async fn get_game_background(app: tauri::AppHandle, hash: String) -> Result<String, String> {
     if !valid_hash(&hash) { return Err("Invalid background hash".into()); }
-    let dir = cache_dir(&app)?;
-    let path = dir.join(format!("{hash}.webp"));
-    let local_path = crate::asset_library::local_file(&app, &format!("backgrounds/cutscene/{hash}.webp"));
-    let data = local_path.as_deref().and_then(|path| read_verified(path, &hash))
-        .or_else(|| read_verified(&path, &hash));
-    let data = match data {
-        Some(data) => data,
-        None => {
-            let data = download(&hash).await?;
-            fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
-            fs::write(&path, &data).map_err(|e| e.to_string())?;
-            data
-        }
-    };
+    let root = asset_root(&app)?;
+    let relative = format!("backgrounds/cutscene/{hash}.webp");
+    let local_path = crate::asset_library::local_file(&app, &relative);
+    if let Some(data) = local_path.as_deref().and_then(|path| read_verified(path, &hash)) {
+        return Ok(format!("data:image/webp;base64,{}", STANDARD.encode(data)));
+    }
+    if let Some(path) = local_path { fs::remove_file(path).map_err(|e| e.to_string())?; }
+    let data = download(&hash).await?;
+    crate::asset_library::save_local(&root, &relative, &data)?;
     Ok(format!("data:image/webp;base64,{}", STANDARD.encode(data)))
 }
 
@@ -68,21 +64,7 @@ pub fn has_game_backgrounds(
     app: tauri::AppHandle,
     hashes: Vec<String>,
 ) -> Result<bool, String> {
-    let dir = cache_dir(&app)?;
-    Ok(hashes.iter().all(|hash| valid_hash(hash) && (
-        dir.join(format!("{hash}.webp")).is_file()
-            || crate::asset_library::local_file(&app, &format!("backgrounds/cutscene/{hash}.webp")).is_some()
-    )))
-}
-
-#[tauri::command]
-pub fn get_game_background_cache_size(app: tauri::AppHandle) -> Result<u64, String> {
-    let Ok(entries) = fs::read_dir(cache_dir(&app)?) else { return Ok(0) };
-    Ok(entries.flatten().filter_map(|entry| entry.metadata().ok()).map(|m| m.len()).sum())
-}
-
-#[tauri::command]
-pub fn clear_game_background_cache(app: tauri::AppHandle) -> Result<(), String> {
-    let _ = fs::remove_dir_all(cache_dir(&app)?);
-    Ok(())
+    Ok(hashes.iter().all(|hash| valid_hash(hash) &&
+        crate::asset_library::local_file(&app, &format!("backgrounds/cutscene/{hash}.webp"))
+            .as_deref().and_then(|path| read_verified(path, hash)).is_some()))
 }

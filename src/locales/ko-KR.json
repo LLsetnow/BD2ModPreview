@@ -53,14 +53,7 @@
         "failed": "오디오 {loaded}/{total} 로딩 완료. 일부 파일을 불러오지 못했습니다."
     },
     "minigameAudio": "미니게임 효과음 활성화",
-    "datingAudio": "데이트 상호작용의 효과음과 음성 활성화",
-    "assetPaths": {
-        "title": "에셋 라이브러리",
-        "root": "에셋 라이브러리 루트",
-        "rootHelp": "Brown-Dust-2-Asset 루트 폴더에서 모델, 일러스트, 텍스처, 오디오 및 배경을 필요할 때 읽습니다。",
-        "choose": "폴더 선택"
-    },
-    "skillAudio": {
+    "datingAudio": "데이트 상호작용의 효과음과 음성 활성화",    "skillAudio": {
         "fullSkillSequence": "스킬 전체 재생",
         "chooseFolder": "오디오 폴더 선택",
         "changeFolder": "오디오 폴더 변경",
@@ -565,7 +558,7 @@
         "fallback": "선택한 언어의 음성이 없어 {language} 음성을 사용합니다 ({count}개).",
         "muted": "캐릭터 음소거 중입니다. 클릭하여 켜세요.",
         "loading": "캐릭터 음성 불러오는 중…",
-        "missing": "설정에서 audio/standing이 포함된 자료 폴더를 선택하세요.",
+        "missing": "BD2ModManager의 설정 → 일반 → 디렉토리에서 에셋 라이브러리를 설정하세요.",
         "failed": "캐릭터 음성을 불러올 수 없습니다. 자료 폴더의 음성 파일을 확인하세요."
     },
   "skillCutsceneAudio": {

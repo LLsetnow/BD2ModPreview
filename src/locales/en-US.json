@@ -49,14 +49,7 @@
   "datingPoseLoadFailed": "Could not load this pose. Please try again.",
   "datingAudioStatus": { "loading": "Loading audio {loaded}/{total}", "completed": "Audio loading completed", "failed": "Audio loaded {loaded}/{total}. Some files could not be loaded." },
   "minigameAudio": "Enable sounds for minigames",
-  "datingAudio": "Enable sounds and voices for dating interactions",
-  "assetPaths": {
-    "title": "Asset library",
-    "root": "Asset library root",
-    "rootHelp": "Choose the Brown-Dust-2-Asset root folder. Models, illustrations, textures, audio and backgrounds are read from it as needed.",
-    "choose": "Choose folder"
-  },
-  "skillAudio": {
+  "datingAudio": "Enable sounds and voices for dating interactions",  "skillAudio": {
     "fullSkillSequence": "Play Full Skill",
     "chooseFolder": "Choose Audio Folder",
     "changeFolder": "Change Audio Folder",
@@ -80,8 +73,6 @@
     "mode": "When images are missing from the local folder",
     "ask": "Ask me first",
     "always": "Download automatically",
-    "cache": "Downloaded cache: {size}",
-    "clear": "Clear cache",
     "illustrationShow": "Automatically show matching illustration backgrounds",
     "illustrationShowHelp": "Use the costume’s original background for standing illustrations. You can switch it off in each preview."
   },
@@ -540,7 +531,7 @@
     "fallback": "This character has no voice in the selected language. Using {language} ({count} lines).",
     "muted": "Character voice muted. Click to enable.",
     "loading": "Loading character voices…",
-    "missing": "Choose an asset library containing audio/standing in Settings.",
+    "missing": "Set the asset library directory in BD2ModManager under Settings → General → Directories.",
     "failed": "Could not load character voice. Check the audio files in your asset library."
   },
   "skillCutsceneAudio": {

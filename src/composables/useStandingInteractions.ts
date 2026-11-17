@@ -65,7 +65,7 @@ export function useStandingInteractions(options: { canInteract: () => boolean; b
     let request = buffers.get(clip.file)
     if (!request) {
       const ctx = audioContext()
-      request = fetch(library.localUrl('audio/standing/' + clip.file), { signal: controller?.signal })
+      request = fetch(library.localUrl('audio/char/' + clip.file), { signal: controller?.signal })
         .then(response => { if (!response.ok) throw new Error('Audio HTTP ' + response.status); return response.arrayBuffer() })
         .then(bytes => ctx.decodeAudioData(bytes))
       buffers.set(clip.file, request)
@@ -90,7 +90,7 @@ export function useStandingInteractions(options: { canInteract: () => boolean; b
       const root = library.activeRoot
       let request = catalogs.get(root)
       if (!request) {
-        request = fetch(library.localUrl('audio/standing/index.json'), { signal: AbortSignal.timeout(8000) })
+        request = fetch(library.localUrl('audio/char/index.json'), { signal: AbortSignal.timeout(8000) })
           .then(response => { if (!response.ok) throw new Error('Standing catalog HTTP ' + response.status); return response.json() as Promise<StandingVoiceCatalog> })
           .then(catalog => { if (catalog.schemaVersion !== 1 || !catalog.characters) throw new Error('Invalid standing voice catalog'); return catalog })
         catalogs.set(root, request)

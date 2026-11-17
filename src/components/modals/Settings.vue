@@ -2,18 +2,16 @@
   setup
   lang="ts"
 >
-import { ExternalLink, RotateCcw, Bug, Check, ChevronDown, ChevronRight, CircleQuestionMark, FolderOpen, Heart, ScrollText, Sparkles, X } from "@lucide/vue"
+import { ExternalLink, RotateCcw, Bug, Check, ChevronDown, ChevronRight, CircleQuestionMark, Heart, ScrollText, Sparkles, X } from "@lucide/vue"
 import { Dialog, DialogPanel, DialogTitle, Menu, MenuButton, MenuItems, MenuItem, TransitionRoot, TransitionChild } from '@headlessui/vue'
 import { onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { openUrl } from '@tauri-apps/plugin-opener'
 import { getCurrentWindow } from '@tauri-apps/api/window'
 import { getVersion } from "@tauri-apps/api/app"
-import { open as openDialog } from '@tauri-apps/plugin-dialog'
 
 import { useUIStore } from '../../stores/ui'
 import { useGameBackgroundStore } from '../../stores/gameBackgrounds'
-import { useAssetLibraryStore } from '../../stores/assetLibrary'
 import { usePreviewerStore } from '../../stores/previewer'
 import { useLogger } from '../../composables/useLogger'
 
@@ -22,9 +20,6 @@ const emit = defineEmits<{ close: [] }>()
 const uiStore = useUIStore()
 const previewerStore = usePreviewerStore()
 const gameBackgrounds = useGameBackgroundStore()
-const assetLibrary = useAssetLibraryStore()
-const assetRootDraft = ref(assetLibrary.rootDirectory)
-watch(() => assetLibrary.rootDirectory, value => { assetRootDraft.value = value })
 const { availableLocales, t, te } = useI18n()
 const { logMessage } = useLogger()
 
@@ -86,22 +81,6 @@ function openLogs() {
   uiStore.openLogs()
 }
 
-function applyAssetRoot() { assetLibrary.rootDirectory = assetRootDraft.value.trim() }
-async function chooseAssetDirectory() {
-  try {
-    const selected = await openDialog({ directory: true, multiple: false, defaultPath: assetLibrary.rootDirectory })
-    if (typeof selected !== 'string') return
-    assetRootDraft.value = selected
-    applyAssetRoot()
-  } catch (error) {
-    logMessage(`Failed to select asset directory: ${error}`, 'error')
-  }
-}
-
-function formatSize(bytes: number) {
-  return bytes >= 1048576 ? `${(bytes / 1048576).toFixed(1)} MB` : `${Math.round(bytes / 1024)} KB`
-}
-
 async function openIssues() {
   try {
     await openUrl('https://github.com/bruhnn/BD2ModManager/issues')
@@ -132,7 +111,6 @@ async function copyMachineId() {
 watch(() => props.show, async (show) => {
   if (show) {
     uiStore.loadMachineId().catch((error) => logMessage(`Failed to load machine ID: ${error}`, 'error'))
-    gameBackgrounds.refreshCacheSize()
     alwaysOnTop.value = await getCurrentWindow().isAlwaysOnTop()
   }
 })
@@ -292,23 +270,6 @@ watch(() => props.show, async (show) => {
                     <option value="ask">{{ t('gameBackgroundSettings.ask') }}</option>
                     <option value="always">{{ t('gameBackgroundSettings.always') }}</option>
                   </select>
-                </label>
-                <div class="background-cache">
-                  <span>{{ t('gameBackgroundSettings.cache', { size: formatSize(gameBackgrounds.cacheSize) }) }}</span>
-                  <button type="button" :disabled="!gameBackgrounds.cacheSize" @click="gameBackgrounds.clearCache()">{{
-                    t('gameBackgroundSettings.clear') }}</button>
-                </div>
-              </section>
-              <section class="asset-path-settings">
-                <h3>{{ t('assetPaths.title') }}</h3>
-                <label class="settings-field">
-                  <span>{{ t('assetPaths.root') }}<small>{{ t('assetPaths.rootHelp') }}</small></span>
-                  <div class="asset-path-control">
-                    <input v-model="assetRootDraft" type="text" spellcheck="false" @change="applyAssetRoot" @keydown.enter="applyAssetRoot" />
-                    <button type="button" :aria-label="t('assetPaths.choose')" :title="t('assetPaths.choose')"
-                      @click="chooseAssetDirectory"><FolderOpen :size="16" /></button>
-                  </div>
-                  <small v-if="assetLibrary.error" role="alert">{{ assetLibrary.error }}</small>
                 </label>
               </section>
               <section v-if="uiStore.isSupporter" class="supporter-section">
@@ -766,39 +727,8 @@ select {
 }
 
 .dating-point-settings,
-.game-background-settings,
-.asset-path-settings {
+.game-background-settings {
   padding: 0 24px 24px;
-}
-
-.asset-path-control {
-	display: flex;
-	gap: 8px;
-}
-
-.asset-path-control input {
-	min-width: 0;
-	flex: 1;
-	height: 32px;
-	padding: 0 10px;
-	border: 1px solid var(--border-default);
-	border-radius: 4px;
-	background: var(--surface-input);
-	color: var(--text-primary);
-	font: inherit;
-}
-
-.asset-path-control button {
-	width: 36px;
-	height: 32px;
-	flex-shrink: 0;
-	display: grid;
-	place-items: center;
-	border: 1px solid var(--border-default);
-	border-radius: 4px;
-	background: var(--surface-input);
-	color: var(--text-primary);
-	cursor: pointer;
 }
 
 .settings-field > span small {
@@ -806,31 +736,6 @@ select {
 	color: var(--text-secondary);
 	font-size: 12px;
 	line-height: 1.5;
-}
-
-.background-cache {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  color: var(--text-secondary);
-  font-size: 12px;
-}
-
-.background-cache button {
-  height: 28px;
-  padding: 0 12px;
-  border: 1px solid var(--border-default);
-  border-radius: 4px;
-  background: var(--surface-input);
-  color: var(--text-primary);
-  font: inherit;
-  cursor: pointer;
-}
-
-.background-cache button:disabled {
-  opacity: .5;
-  cursor: default;
 }
 
 .point-setting {

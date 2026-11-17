@@ -122,7 +122,7 @@ const filteredMinigames = computed(() => {
 		const character = charactersStore.characters.find(char => char.costume_id === game.costumeId)
 		if (!character) return []
 		const title = `${charactersStore.getLocalizedName(character.character_name)} - ${charactersStore.getLocalizedName(character.costume_name)}`
-		const thumbnail = library.url(`https://cdn.jsdelivr.net/gh/bruhnn/Brown-Dust-2-Asset@master/ui/illust/illust_inven_char/${character.assets.character_image}`)
+		const thumbnail = library.url(`https://cdn.jsdelivr.net/gh/LLsetnow/Brown-Dust-2-Asset@master/ui/illust/illust_inven_char/${character.assets.character_image}`)
 		return `${title} ${game.name}`.toLowerCase().includes(search) ? [{ ...game, character, title, thumbnail }] : []
 	})
 	if (sortValue.value === 'a-z') items.sort((a, b) => a.title.localeCompare(b.title))
@@ -135,8 +135,8 @@ const filteredMinigames = computed(() => {
 	return items
 })
 
-const JSDELIVR_BASE_URL = "https://cdn.jsdelivr.net/gh/bruhnn/Brown-Dust-2-Asset@master/spine"
-const GITHUB_BASE_URL = 'https://raw.githubusercontent.com/bruhnn/Brown-Dust-2-Asset/refs/heads/master/spine'
+const JSDELIVR_BASE_URL = "https://cdn.jsdelivr.net/gh/LLsetnow/Brown-Dust-2-Asset@master/spine"
+const GITHUB_BASE_URL = 'https://raw.githubusercontent.com/LLsetnow/Brown-Dust-2-Asset/refs/heads/master/spine'
 const ENDPOINTS = {
 	standing: 'char',
 	cutscene: 'cutscenes',
@@ -230,7 +230,7 @@ function characterClicked(char: Character, target?: PreviewDropTarget) {
 function getThumbnail(character: Character) {
 	if (typeSelected.value === "minigames") return
 	const imageKey = characterTypeMap[typeSelected.value]
-	const baseUrl = "https://cdn.jsdelivr.net/gh/bruhnn/Brown-Dust-2-Asset@master/ui/illust"
+	const baseUrl = "https://cdn.jsdelivr.net/gh/LLsetnow/Brown-Dust-2-Asset@master/ui/illust"
 
 	if (!imageKey || !character.assets[imageKey.image]) {
 		logMessage(`Invalid Character Data. Could not find image for ${charactersStore.getLocalizedName(character.character_name)} - ${charactersStore.getLocalizedName(character.costume_name)} (${character.id}) ${typeSelected.value} type.`, "error")

@@ -4,13 +4,13 @@
 
 ## 音频与官方对应关系
 
-素材库位置是 audio/standing/，运行索引为 audio/standing/index.json。音频不打包进 EXE。设置中的素材库根目录沿用已有的 spine、ui、audio、backgrounds 资源配置。
+素材库位置是 audio/char/，运行索引为 audio/char/index.json。音频不打包进 EXE。设置中的素材库根目录沿用已有的 spine、ui、audio、backgrounds 资源配置。
 
 本机 common 设计数据库中的 CostumeDesignConceptInfoTable 为 207 套服装各列出三条 Profile/NormalLine 事件（protobuf 字段 11）。通过游戏 FMOD 2.03.12 的 create-programmer-sound 回调读取全部 621 条事件，确认它们分别指向该服装的 BattleReady_1、BattleReady_2、BattleReady_3 采样。该名称不影响其作为普通台词事件音源的用途。运行时只从这三条已确认台词中选择，不将情绪短音或好感/生日等特殊条目加入普通点击池。
 
-设计数据库 SHA256：7cbb7275a9fc137592b01383113381f18d209903d34963bdd70c9ad0d5b666ba。完整事件和音源对应保存在素材库 audio/standing/official-click-events.json。
+设计数据库 SHA256：7cbb7275a9fc137592b01383113381f18d209903d34963bdd70c9ad0d5b666ba。完整事件和音源对应保存在素材库 audio/char/official-click-events.json。
 
-日语共 621 条，覆盖 207 套；韩语共 549 条，覆盖 183 套。所选语言缺少当前服装时，使用另一种已有语言；语音按钮的悬停说明会标明实际语言。缺项见 audio/standing/missing-click-voices.json。最初提取的 4,156 条情绪/特殊语音继续保留，整个 standing 目录目前有 5,326 个 WAV。
+日语共 621 条，覆盖 207 套；韩语共 549 条，覆盖 183 套。所选语言缺少当前服装时，使用另一种已有语言；语音按钮的悬停说明会标明实际语言。缺项见 audio/char/missing-click-voices.json。最初提取的 4,156 条情绪/特殊语音继续保留，整个 char 目录目前有 5,326 个 WAV。
 
 ## 设置与播放生命周期
 

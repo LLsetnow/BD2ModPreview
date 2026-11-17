@@ -1,7 +1,7 @@
 const prefixes = [
-  'https://cdn.jsdelivr.net/gh/bruhnn/Brown-Dust-2-Asset@master/',
-  'https://raw.githubusercontent.com/bruhnn/Brown-Dust-2-Asset/refs/heads/master/',
-  'https://raw.githubusercontent.com/bruhnn/Brown-Dust-2-Asset/master/',
+  'https://cdn.jsdelivr.net/gh/LLsetnow/Brown-Dust-2-Asset@master/',
+  'https://raw.githubusercontent.com/LLsetnow/Brown-Dust-2-Asset/refs/heads/master/',
+  'https://raw.githubusercontent.com/LLsetnow/Brown-Dust-2-Asset/master/',
 ]
 
 export function libraryAssetUrl(base: string, root: string, remote: string) {

@@ -3,6 +3,7 @@ import { ref } from "vue";
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { useLogger } from "../composables/useLogger";
+import { useAssetLibraryStore } from "./assetLibrary";
 
 interface BD2Mod {
   name: string;
@@ -11,8 +12,14 @@ interface BD2Mod {
   errors: string[];
 }
 
+interface ManagerState {
+  mods: BD2Mod[];
+  assetLibraryDirectory?: string | null;
+}
+
 export const useModManagerStore = defineStore("modManager", () => {
   const { logMessage } = useLogger()
+  const assetLibrary = useAssetLibraryStore()
   let listeners: UnlistenFn[] = []
 
   const connected = ref(false)
@@ -36,8 +43,12 @@ export const useModManagerStore = defineStore("modManager", () => {
   }
 
   async function initialize() {
-    listeners.push(await listen<{ mods: BD2Mod[] }>("bd2mm::state", ({ payload }) => {
+    listeners.push(await listen<ManagerState>("bd2mm::state", ({ payload }) => {
       mods.value = payload.mods;
+      const directory = payload.assetLibraryDirectory?.trim()
+      if (directory && directory !== assetLibrary.rootDirectory) {
+        assetLibrary.rootDirectory = directory
+      }
       connected.value = true;
     }));
     listeners.push(await listen("bd2mm::disconnected", () => {

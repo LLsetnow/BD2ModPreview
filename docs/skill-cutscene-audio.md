@@ -6,9 +6,9 @@ Game cutscene preview loads its sound effects and character voices automatically
 
 ## Asset layout
 
-- audio/skills/timelines/<cutscene-id>.json: timing, event path, language files, volume, stop mode, and visual timeline SHA-256.
-- audio/skills/sfx/*.wav: complete FMOD event renders, including the event's layers, routing, pitch and internal delays.
-- audio/skills/ja-JP/<voice-id>/*.wav and ko-KR/<voice-id>/*.wav: decoded programmer samples resolved through the game's FMOD event callbacks.
+- audio/cutscene/timelines/<cutscene-id>.json: timing, event path, language files, volume, stop mode, and visual timeline SHA-256.
+- audio/cutscene/sfx/*.wav: complete FMOD event renders, including the event's layers, routing, pitch and internal delays.
+- audio/cutscene/ja-JP/<voice-id>/*.wav and ko-KR/<voice-id>/*.wav: decoded programmer samples resolved through the game's FMOD event callbacks.
 - index.json: coverage summary; missing-audio.json: unavailable language samples; extraction-manifest.json: source files, sample indexes, hashes and rendering provenance.
 
 Audio is external to the EXE. Missing local skill audio returns 404 immediately through the Asset library protocol.
@@ -49,4 +49,4 @@ Node tests cover overlapping sounds, the common clock, pause/resume, seek offset
 
 The initial offline renders could repeat stream decoder buffers in 30 events because the non-realtime render clock advanced faster than the asynchronous streaming thread. Re-rendering now uses Core STREAM_FROM_UPDATE and a paused pre-roll so streaming sounds are ready before recording starts. All 174 effects were rebuilt and checked against their original FSB samples, preserving FMOD mixing and authored event timing. The 30 streaming effects have source waveform correlation of at least 0.992; the five user-reported examples exceed 0.995 and start at the original sample position. Ordinary compressed samples can differ by 64 encoder priming frames, while authored source offsets are preserved.
 
-The corrected files replace audio/skills/sfx in the Asset library; close and reopen a preview to discard its already decoded buffers. The local asset protocol uses Cache-Control: no-store. audio-quality.json records affected costumes and validation, and the previous WAVs are backed up under releases/BD2ModPreview-skill-audio-noise-20261117/before.
+The corrected files replace audio/cutscene/sfx in the Asset library; close and reopen a preview to discard its already decoded buffers. The local asset protocol uses Cache-Control: no-store. audio-quality.json records affected costumes and validation, and the previous WAVs are backed up under releases/BD2ModPreview-skill-audio-noise-20261117/before.

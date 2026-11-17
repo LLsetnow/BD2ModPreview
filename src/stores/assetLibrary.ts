@@ -14,11 +14,21 @@ function initialRoot() {
 
 export const useAssetLibraryStore = defineStore('assetLibrary', () => {
   const rootDirectory = useLocalStorage('ASSET_LIBRARY_ROOT', initialRoot())
-  const activeRoot = ref('')
+  const activeRoot = ref(rootDirectory.value)
   const error = ref('')
-  let ready: Promise<void> = Promise.resolve()
+  let initialized = false
+  let ready: Promise<void> = invoke<string | null>('get_asset_library_root').then(async sharedRoot => {
+    if (sharedRoot?.trim()) rootDirectory.value = sharedRoot.trim()
+    const directory = rootDirectory.value.trim()
+    await invoke('set_asset_library_root', { directory })
+    activeRoot.value = directory
+    error.value = ''
+  }).catch(cause => {
+    error.value = String(cause)
+  }).finally(() => { initialized = true })
   let generation = 0
   watch(rootDirectory, directory => {
+    if (!initialized) return
     const request = ++generation
     ready = invoke('set_asset_library_root', { directory }).then(() => {
       if (request !== generation) return
@@ -34,7 +44,7 @@ export const useAssetLibraryStore = defineStore('assetLibrary', () => {
     return libraryAssetUrl(convertFileSrc('', 'bd2library'), activeRoot.value, remote)
   }
   function localUrl(relative: string) {
-    return libraryAssetUrl(convertFileSrc('', 'bd2library'), activeRoot.value, 'https://cdn.jsdelivr.net/gh/bruhnn/Brown-Dust-2-Asset@master/' + relative)
+    return libraryAssetUrl(convertFileSrc('', 'bd2library'), activeRoot.value, 'https://cdn.jsdelivr.net/gh/LLsetnow/Brown-Dust-2-Asset@master/' + relative)
   }
   return { rootDirectory, activeRoot: readonly(activeRoot), error: readonly(error), ready: () => ready, url, localUrl }
 })

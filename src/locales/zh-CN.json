@@ -53,14 +53,7 @@
         "failed": "已加载音频 {loaded}/{total}。部分文件无法加载。"
     },
     "minigameAudio": "启用小游戏音效",
-    "datingAudio": "启用约会互动的音效和语音",
-    "assetPaths": {
-        "title": "资产目录",
-        "root": "素材库根目录",
-        "rootHelp": "选择 Brown-Dust-2-Asset 的根目录，自动按需读取模型、立绘、纹理、音频和背景。",
-        "choose": "选择文件夹"
-    },
-    "skillAudio": {
+    "datingAudio": "启用约会互动的音效和语音",    "skillAudio": {
         "fullSkillSequence": "完整播放技能",
         "chooseFolder": "选择音频文件夹",
         "changeFolder": "更换音频文件夹",
@@ -565,7 +558,7 @@
         "fallback": "所选语言暂无当前角色语音，使用{language}（{count} 条）",
         "muted": "角色语音已静音，点击开启",
         "loading": "正在载入角色语音…",
-        "missing": "暂无角色语音，请在设置中选择含 audio/standing 的素材库",
+        "missing": "暂无角色语音，请在 BD2ModManager 的设置 → 常规 → 目录中设置素材库目录。",
         "failed": "角色语音读取失败，请检查素材库中的音频文件"
     },
   "skillCutsceneAudio": {

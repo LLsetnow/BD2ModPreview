@@ -4,7 +4,7 @@ use std::{fs, io::Read, sync::Mutex, time::Duration};
 use tauri::Manager;
 
 static CACHE_LOCK: Mutex<()> = Mutex::new(());
-const AUDIO_URL: &str = "https://cdn.jsdelivr.net/gh/bruhnn/Brown-Dust-2-Asset@master/audio/dating/";
+const AUDIO_URL: &str = "https://cdn.jsdelivr.net/gh/LLsetnow/Brown-Dust-2-Asset@master/audio/dating/";
 
 #[derive(serde::Serialize)]
 pub struct DatingAudioDownload {
@@ -17,21 +17,15 @@ pub async fn get_dating_audio(app: tauri::AppHandle, hash: String) -> Result<Dat
     if hash.len() != 64 || !hash.bytes().all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b)) {
         return Err("Invalid audio hash".into());
     }
-    let directory = app.path().app_cache_dir().map_err(|e| e.to_string())?.join("dating-audio");
-    let local_path = crate::asset_library::local_file(&app, &format!("audio/dating/{hash}.ogg"));
+    let root = app.state::<crate::asset_library::AssetLibrary>().root()
+        .ok_or("Choose an asset library directory in BD2ModManager settings")?;
+    let directory = root.join("audio").join("dating");
     tauri::async_runtime::spawn_blocking(move || {
         let path = directory.join(format!("{hash}.ogg"));
         {
             let _guard = CACHE_LOCK.lock().map_err(|e| e.to_string())?;
-            if let Some(local_path) = local_path {
-                if let Ok(data) = fs::read(local_path) {
-                    if data.starts_with(b"OggS") && hex::encode(Sha256::digest(&data)) == hash {
-                        return Ok(DatingAudioDownload { data: STANDARD.encode(data), failures: Vec::new() });
-                    }
-                }
-            }
             if let Ok(data) = fs::read(&path) {
-                if hex::encode(Sha256::digest(&data)) == hash {
+                if data.starts_with(b"OggS") && hex::encode(Sha256::digest(&data)) == hash {
                     return Ok(DatingAudioDownload { data: STANDARD.encode(data), failures: Vec::new() });
                 }
                 fs::remove_file(&path).map_err(|e| e.to_string())?;
@@ -43,7 +37,7 @@ pub async fn get_dating_audio(app: tauri::AppHandle, hash: String) -> Result<Dat
         let mut downloaded = None;
         for (source, base) in [
             ("jsDelivr", AUDIO_URL),
-            ("GitHub", "https://raw.githubusercontent.com/bruhnn/Brown-Dust-2-Asset/master/audio/dating/"),
+            ("GitHub", "https://raw.githubusercontent.com/LLsetnow/Brown-Dust-2-Asset/master/audio/dating/"),
         ] {
             let result = (|| -> Result<Vec<u8>, String> {
                 let response = client.get(format!("{base}{hash}.ogg")).send()

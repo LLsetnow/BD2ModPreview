@@ -15,7 +15,6 @@ export const useGameBackgroundStore = defineStore("gameBackgrounds", () => {
 	const showByDefault = useLocalStorage("GAME_BACKGROUND_SHOW", true);
 	const showIllustrationByDefault = useLocalStorage("ILLUSTRATION_BACKGROUND_SHOW", true);
 	const library = useAssetLibraryStore();
-	const cacheSize = ref(0);
 	const prompt = ref<BackgroundPrompt | null>(null);
 	const decided = new Set<string>();
 	const loaded = new Map<string, Promise<string>>();
@@ -26,20 +25,10 @@ export const useGameBackgroundStore = defineStore("gameBackgrounds", () => {
 		let request = loaded.get(key);
 		if (!request) {
 			request = library.ready().then(() => invoke<string>("get_game_background", { hash }));
-			request.then(refreshCacheSize, () => loaded.delete(key));
+			request.catch(() => loaded.delete(key));
 			loaded.set(key, request);
 		}
 		return request;
-	}
-
-	async function refreshCacheSize() {
-		cacheSize.value = await invoke<number>("get_game_background_cache_size");
-	}
-
-	async function clearCache() {
-		await invoke("clear_game_background_cache");
-		loaded.clear();
-		await refreshCacheSize();
 	}
 
 	async function offer(
@@ -75,5 +64,5 @@ export const useGameBackgroundStore = defineStore("gameBackgrounds", () => {
 	}
 
 	watch(() => library.activeRoot, () => { loaded.clear(); decided.clear(); prompt.value = null; pendingApply = null });
-	return { mode, showByDefault, showIllustrationByDefault, cacheSize, prompt, load, refreshCacheSize, clearCache, offer, answer };
+	return { mode, showByDefault, showIllustrationByDefault, prompt, load, offer, answer };
 });

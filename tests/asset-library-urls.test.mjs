@@ -4,7 +4,7 @@ import { libraryAssetUrl } from '../src/utils/assetLibraryUrls.ts'
 
 const base = 'http://bd2library.localhost/'
 const root = 'F:\\Neowiz\\Brown-Dust-2-Asset-master'
-const cdn = 'https://cdn.jsdelivr.net/gh/bruhnn/Brown-Dust-2-Asset@master/'
+const cdn = 'https://cdn.jsdelivr.net/gh/LLsetnow/Brown-Dust-2-Asset@master/'
 
 test('Spine atlas pages resolve inside the selected skeleton folder', () => {
   const atlas = libraryAssetUrl(base, root, cdn + 'spine/char/char001207/char001207.atlas')
@@ -20,7 +20,7 @@ test('dating pose URLs retain their sibling directory structure', () => {
 })
 test('all supported upstream URLs map to the same local asset', () => {
   const path = 'ui/novel_background/texture%20page.png'
-  const urls = [cdn + path, 'https://raw.githubusercontent.com/bruhnn/Brown-Dust-2-Asset/refs/heads/master/' + path, 'https://raw.githubusercontent.com/bruhnn/Brown-Dust-2-Asset/master/' + path]
+  const urls = [cdn + path, 'https://raw.githubusercontent.com/LLsetnow/Brown-Dust-2-Asset/refs/heads/master/' + path, 'https://raw.githubusercontent.com/LLsetnow/Brown-Dust-2-Asset/master/' + path]
   assert.equal(new Set(urls.map(url => libraryAssetUrl(base, root, url))).size, 1)
 })
 test('changing roots invalidates URLs while disabled or unrelated URLs stay original', () => {

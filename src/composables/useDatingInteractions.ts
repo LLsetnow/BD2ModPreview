@@ -948,7 +948,7 @@ export function useDatingInteractions(
 					JSON.stringify({ results, skeletonUrl, atlasUrl, error }),
 				);
 				const cdn =
-					"https://cdn.jsdelivr.net/gh/bruhnn/Brown-Dust-2-Asset@master/";
+					"https://cdn.jsdelivr.net/gh/LLsetnow/Brown-Dust-2-Asset@master/";
 				if (
 					raw ||
 					!skeletonUrl.startsWith(cdn) ||
@@ -956,7 +956,7 @@ export function useDatingInteractions(
 				)
 					throw error;
 				const github =
-					"https://raw.githubusercontent.com/bruhnn/Brown-Dust-2-Asset/refs/heads/master/";
+					"https://raw.githubusercontent.com/LLsetnow/Brown-Dust-2-Asset/refs/heads/master/";
 				skeletonUrl = github + skeletonUrl.slice(cdn.length);
 				atlasUrl = github + atlasUrl.slice(cdn.length);
 			}
