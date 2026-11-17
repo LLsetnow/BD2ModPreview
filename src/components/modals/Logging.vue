@@ -12,6 +12,8 @@ import {
   TransitionChild
 } from '@headlessui/vue'
 
+import { useI18n } from 'vue-i18n'
+
 import { useLogger } from '../../composables/useLogger'
 
 import { useClipboard } from '@vueuse/core'
@@ -20,6 +22,7 @@ const props = defineProps({
   show: Boolean
 })
 const emit = defineEmits(["close"])
+const { t } = useI18n()
 const { logs, clearLogs } = useLogger()
 const { copy } = useClipboard()
 
@@ -42,16 +45,16 @@ function handleCopy() {
           <DialogPanel class="logs-panel" :class="{ empty: logs.length == 0 }">
             <div class="logs-header">
               <DialogTitle class="logs-title">
-                Logs
+                {{ t('logs.title') }}
               </DialogTitle>
               <div class="logs-actions">
-                <button @click="clearLogs" class="logs-action" type="button" title="Clear logs" aria-label="Clear logs">
+                <button @click="clearLogs" class="logs-action" type="button" :title="t('logs.clear')" :aria-label="t('logs.clear')">
                   <Trash2 :size="16" aria-hidden="true" />
                 </button>
-                <button @click="handleCopy" class="logs-action" type="button" title="Copy logs" aria-label="Copy logs">
+                <button @click="handleCopy" class="logs-action" type="button" :title="t('logs.copy')" :aria-label="t('logs.copy')">
                   <Copy :size="16" aria-hidden="true" />
                 </button>
-                <button type="button" aria-label="Close" class="preview-close-button" @click="$emit('close')">
+                <button type="button" :aria-label="t('common.close')" class="preview-close-button" @click="$emit('close')">
                   <X :size="16" aria-hidden="true" />
                 </button>
               </div>
@@ -78,7 +81,7 @@ function handleCopy() {
                 </div>
               </div>
               <div v-else>
-                <p class="logs-empty">No logs available.</p>
+                <p class="logs-empty">{{ t('logs.empty') }}</p>
               </div>
             </DialogDescription>
           </DialogPanel>

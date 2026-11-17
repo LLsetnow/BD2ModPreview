@@ -516,5 +516,11 @@
             "title": "An unexpected error occurred",
             "message": "An unexpected error occurred. More information in the logs."
         }
+    },
+    "logs": {
+        "title": "Logs",
+        "clear": "Clear logs",
+        "copy": "Copy logs",
+        "empty": "No logs available."
     }
 }

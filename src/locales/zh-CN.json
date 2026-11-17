@@ -281,7 +281,25 @@
         "loopNumber": "循环动画 {number}",
         "delayNumber": "动画 {number} 的延迟",
         "durationNumber": "动画 {number} 的时长",
-        "removeAnimation": "移除动画 {number}"
+        "removeAnimation": "移除动画 {number}",
+        "showInteractionPoints": "显示互动触点",
+        "resetDating": "重置约会互动",
+        "datingStageLabel": "姿势",
+        "datingStage": "姿势 {number}",
+        "datingToolLabel": "工具",
+        "showAreas": "显示互动区域",
+        "loadSteps": {
+            "textures": "贴图",
+            "textureCount": "贴图 {loaded}/{total}"
+        },
+        "gameBackground": "显示游戏内技能动画的背景",
+        "gameBackgroundToggle": "背景",
+        "gameBackgroundToggleHint": "开启或关闭游戏内技能动画的背景",
+        "storyBackground": "背景 {number}",
+        "storyBackgroundHint": "游戏中的场景背景。首次选择时下载完整图片。",
+        "gameBackgroundImages": "技能动画背景",
+        "gameBackgroundImageHint": "将此游戏内技能动画图片用作背景。优先使用本地文件，缺失图片仅需下载一次。",
+        "gameBackgroundHint": "此技能动画在游戏中使用的动态背景。在动画菜单中选择“游戏内技能动画”时显示；优先使用本地文件，缺失图片仅需下载一次。"
     },
     "common": {
         "viewLogs": "查看日志",
@@ -491,5 +509,43 @@
             "title": "不支持的模组类型",
             "message": "此模组类型无法下载。"
         }
+    },
+    "gameBackgroundPrompt": {
+        "title": "显示技能动画背景？",
+        "message": "此技能动画包含游戏内的动态背景（{count} 张图片，{size}）。优先使用本地文件，缺失图片会下载并缓存。",
+        "hint": "可随时通过预览控制栏的“背景”按钮开启或关闭背景。",
+        "remember": "记住我的选择",
+        "yes": "加载并显示",
+        "no": "不显示背景"
+    },
+    "gameBackgroundSettings": {
+        "title": "技能动画背景",
+        "show": "在游戏内技能动画中显示背景",
+        "showHelp": "关闭后，技能动画不显示背景。仍可通过“背景”按钮开启。",
+        "mode": "本地文件夹缺少图片时",
+        "ask": "先询问我",
+        "always": "自动下载",
+        "cache": "已下载缓存：{size}",
+        "clear": "清除缓存"
+    },
+    "backgroundsPanel": {
+        "title": "游戏背景",
+        "open": "游戏背景…",
+        "search": "按编号搜索",
+        "reset": "重置背景",
+        "resetShort": "重置",
+        "seeAllShort": "查看全部",
+        "hintAll": "选择背景后应用到所有打开的预览。",
+        "hintOne": "选择背景后应用到此预览。",
+        "item": "背景 {number}",
+        "none": "未找到背景。",
+        "failed": "无法加载背景 {number}。",
+        "offline": "无法加载游戏背景。"
+    },
+    "logs": {
+        "title": "日志",
+        "clear": "清空日志",
+        "copy": "复制日志",
+        "empty": "暂无日志。"
     }
 }

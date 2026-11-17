@@ -281,7 +281,25 @@
         "loopNumber": "アニメーション {number} をループ",
         "delayNumber": "アニメーション {number} の開始時間",
         "durationNumber": "アニメーション {number} の再生時間",
-        "removeAnimation": "アニメーション {number} を削除"
+        "removeAnimation": "アニメーション {number} を削除",
+        "showInteractionPoints": "交流ポイントを表示",
+        "resetDating": "デート交流をリセット",
+        "datingStageLabel": "ポーズ",
+        "datingStage": "ポーズ {number}",
+        "datingToolLabel": "ツール",
+        "showAreas": "交流エリアを表示",
+        "loadSteps": {
+            "textures": "テクスチャ",
+            "textureCount": "テクスチャ {loaded}/{total}"
+        },
+        "gameBackground": "ゲーム内カットシーンの背景を表示",
+        "gameBackgroundToggle": "背景",
+        "gameBackgroundToggleHint": "ゲーム内カットシーンの背景表示を切り替え",
+        "storyBackground": "背景 {number}",
+        "storyBackgroundHint": "ゲーム内の風景背景です。選択時に一度だけ画像全体をダウンロードします。",
+        "gameBackgroundImages": "カットシーンの背景",
+        "gameBackgroundImageHint": "このゲーム内カットシーンの画像を背景に使います。ローカルファイルを優先し、不足分は一度だけダウンロードします。",
+        "gameBackgroundHint": "このカットシーンのゲーム内の動く背景です。アニメーションメニューで「ゲーム内カットシーン」を選ぶと表示されます。ローカルファイルを優先し、不足分は一度だけダウンロードします。"
     },
     "common": {
         "viewLogs": "ログを表示",
@@ -491,5 +509,43 @@
             "title": "未対応のMODタイプ",
             "message": "このMODタイプはダウンロードできません。"
         }
+    },
+    "gameBackgroundPrompt": {
+        "title": "カットシーンの背景を表示しますか？",
+        "message": "このカットシーンにはゲーム内の動く背景があります（画像 {count} 枚、{size}）。ローカルファイルを優先し、不足分はダウンロードしてキャッシュします。",
+        "hint": "プレビュー操作欄の「背景」ボタンでいつでも表示を切り替えられます。",
+        "remember": "選択を記憶する",
+        "yes": "読み込んで表示",
+        "no": "背景なしで再生"
+    },
+    "gameBackgroundSettings": {
+        "title": "カットシーンの背景",
+        "show": "ゲーム内カットシーンの背景を表示する",
+        "showHelp": "無効にすると背景なしで再生します。「背景」ボタンから有効にすることもできます。",
+        "mode": "ローカルフォルダーに画像がない場合",
+        "ask": "毎回確認する",
+        "always": "自動ダウンロード",
+        "cache": "ダウンロード済みキャッシュ：{size}",
+        "clear": "キャッシュを削除"
+    },
+    "backgroundsPanel": {
+        "title": "ゲームの背景",
+        "open": "ゲームの背景…",
+        "search": "番号で検索",
+        "reset": "背景をリセット",
+        "resetShort": "リセット",
+        "seeAllShort": "すべて表示",
+        "hintAll": "背景を選択すると、開いているすべてのプレビューに適用されます。",
+        "hintOne": "背景を選択すると、このプレビューに適用されます。",
+        "item": "背景 {number}",
+        "none": "背景が見つかりません。",
+        "failed": "背景 {number} を読み込めませんでした。",
+        "offline": "ゲームの背景を読み込めませんでした。"
+    },
+    "logs": {
+        "title": "ログ",
+        "clear": "ログを消去",
+        "copy": "ログをコピー",
+        "empty": "ログはありません。"
     }
 }

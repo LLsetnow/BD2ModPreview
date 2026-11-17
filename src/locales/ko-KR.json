@@ -281,7 +281,25 @@
         "loopNumber": "애니메이션 {number} 반복",
         "delayNumber": "애니메이션 {number} 시작 지연",
         "durationNumber": "애니메이션 {number} 재생 시간",
-        "removeAnimation": "애니메이션 {number} 제거"
+        "removeAnimation": "애니메이션 {number} 제거",
+        "showInteractionPoints": "상호작용 지점 표시",
+        "resetDating": "데이트 상호작용 초기화",
+        "datingStageLabel": "포즈",
+        "datingStage": "포즈 {number}",
+        "datingToolLabel": "도구",
+        "showAreas": "상호작용 영역 표시",
+        "loadSteps": {
+            "textures": "텍스처",
+            "textureCount": "텍스처 {loaded}/{total}"
+        },
+        "gameBackground": "게임 내 컷신 배경 표시",
+        "gameBackgroundToggle": "배경",
+        "gameBackgroundToggleHint": "게임 내 컷신 배경 켜기 또는 끄기",
+        "storyBackground": "배경 {number}",
+        "storyBackgroundHint": "게임의 풍경 배경입니다. 처음 선택할 때 전체 이미지를 다운로드합니다.",
+        "gameBackgroundImages": "컷신 배경",
+        "gameBackgroundImageHint": "이 게임 내 컷신 이미지를 배경으로 사용합니다. 로컬 파일을 먼저 사용하고 없는 이미지는 한 번만 다운로드합니다.",
+        "gameBackgroundHint": "이 컷신의 게임 내 움직이는 배경입니다. 애니메이션 메뉴에서 “게임 내 컷신”을 선택하면 표시됩니다. 로컬 파일을 먼저 사용하고 없는 이미지는 한 번만 다운로드합니다."
     },
     "common": {
         "viewLogs": "로그 보기",
@@ -491,5 +509,43 @@
             "title": "지원하지 않는 모드 유형",
             "message": "이 모드 유형은 다운로드할 수 없습니다."
         }
+    },
+    "gameBackgroundPrompt": {
+        "title": "컷신 배경을 표시할까요?",
+        "message": "이 컷신에는 게임의 움직이는 배경이 있습니다(이미지 {count}개, {size}). 로컬 파일을 먼저 사용하고 없는 이미지는 다운로드하여 캐시합니다.",
+        "hint": "미리보기 조작부의 “배경” 버튼으로 언제든지 배경을 켜거나 끌 수 있습니다.",
+        "remember": "선택 기억하기",
+        "yes": "불러와서 표시",
+        "no": "배경 없이 재생"
+    },
+    "gameBackgroundSettings": {
+        "title": "컷신 배경",
+        "show": "게임 내 컷신 배경 표시",
+        "showHelp": "끄면 컷신이 배경 없이 재생됩니다. “배경” 버튼으로 다시 켤 수 있습니다.",
+        "mode": "로컬 폴더에 이미지가 없을 때",
+        "ask": "먼저 확인",
+        "always": "자동 다운로드",
+        "cache": "다운로드한 캐시: {size}",
+        "clear": "캐시 지우기"
+    },
+    "backgroundsPanel": {
+        "title": "게임 배경",
+        "open": "게임 배경…",
+        "search": "번호로 검색",
+        "reset": "배경 초기화",
+        "resetShort": "초기화",
+        "seeAllShort": "모두 보기",
+        "hintAll": "배경을 선택하면 열려 있는 모든 미리보기에 적용됩니다.",
+        "hintOne": "배경을 선택하면 이 미리보기에 적용됩니다.",
+        "item": "배경 {number}",
+        "none": "배경을 찾을 수 없습니다.",
+        "failed": "배경 {number}을(를) 불러오지 못했습니다.",
+        "offline": "게임 배경을 불러오지 못했습니다."
+    },
+    "logs": {
+        "title": "로그",
+        "clear": "로그 지우기",
+        "copy": "로그 복사",
+        "empty": "로그가 없습니다."
     }
 }
