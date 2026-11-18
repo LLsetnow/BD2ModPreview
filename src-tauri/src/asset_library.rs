@@ -1,6 +1,6 @@
 use percent_encoding::percent_decode_str;
 use std::{fs, io::Write, path::{Component, Path, PathBuf}, sync::{atomic::{AtomicU64, Ordering}, Mutex}, time::Duration};
-use tauri::http::Response;
+use tauri::{http::Response, Manager};
 
 static TEMP_FILE_ID: AtomicU64 = AtomicU64::new(0);
 
