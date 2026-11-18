@@ -72,8 +72,6 @@
     },
     "supporter": {
         "title": "赞助者权限",
-        "active": "已激活",
-        "thankYou": "感谢你的支持！",
         "description": "使用 AFDIAN 订单号或 Ko-fi 激活码激活。",
         "orderNumber": "AFDIAN 订单号或激活码",
         "placeholder": "粘贴订单号或激活码",

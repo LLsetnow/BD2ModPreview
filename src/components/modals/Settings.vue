@@ -2,7 +2,7 @@
   setup
   lang="ts"
 >
-import { ExternalLink, RotateCcw, Bug, Check, ChevronDown, ChevronRight, CircleQuestionMark, Heart, ScrollText, Sparkles, X } from "@lucide/vue"
+import { ExternalLink, RotateCcw, Bug, ChevronDown, ChevronRight, CircleQuestionMark, Heart, ScrollText, Sparkles, X } from "@lucide/vue"
 import { Dialog, DialogPanel, DialogTitle, Menu, MenuButton, MenuItems, MenuItem, TransitionRoot, TransitionChild } from '@headlessui/vue'
 import { onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -272,18 +272,7 @@ watch(() => props.show, async (show) => {
                   </select>
                 </label>
               </section>
-              <section v-if="uiStore.isSupporter" class="supporter-section">
-                <div class="supporter-heading">
-                  <span class="supporter-title">
-                    <Heart :size="17" />{{ t('supporter.title') }}
-                  </span>
-                  <span class="supporter-active">
-                    <Check :size="17" />{{ t('supporter.active') }}
-                  </span>
-                </div>
-                <p>{{ t('supporter.thankYou') }}</p>
-              </section>
-              <details v-else class="supporter-section">
+              <details v-if="!uiStore.isSupporter" class="supporter-section">
                 <summary>
                   <div>
                     <span class="supporter-title">
@@ -501,21 +490,6 @@ select {
 
 .supporter-section>summary {
   justify-content: space-between;
-}
-
-.supporter-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.supporter-active {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--accent);
-  font-size: 12px;
 }
 
 .supporter-title {

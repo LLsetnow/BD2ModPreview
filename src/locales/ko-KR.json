@@ -72,8 +72,6 @@
     },
     "supporter": {
         "title": "후원자 기능",
-        "active": "활성",
-        "thankYou": "후원해 주셔서 감사합니다!",
         "description": "AFDIAN 주문 번호 또는 Ko-fi 활성화 코드로 활성화하세요.",
         "orderNumber": "AFDIAN 주문 번호 또는 활성화 코드",
         "placeholder": "주문 번호 또는 활성화 코드 붙여넣기",

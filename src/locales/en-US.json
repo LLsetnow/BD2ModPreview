@@ -79,8 +79,6 @@
     "datingPointSettings": {"click": "Click points", "drag": "Drag points", "colorHelp": "Color of the indicator and area box.", "size": "Point size", "sizeHelp": "Changes the indicator size, not the interaction area.", "reset": "Reset to default"},
     "supporter": {
         "title": "Supporter access",
-        "active": "Active",
-        "thankYou": "Thank you for your support!",
         "description": "Activate with your AFDIAN order number or Ko-fi activation code.",
         "orderNumber": "AFDIAN order number or activation code",
         "placeholder": "Paste your order number or activation code",

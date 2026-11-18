@@ -72,8 +72,6 @@
     },
     "supporter": {
         "title": "サポーター特典",
-        "active": "有効",
-        "thankYou": "ご支援ありがとうございます！",
         "description": "AFDIAN の注文番号または Ko-fi の有効化コードで有効にします。",
         "orderNumber": "AFDIAN の注文番号または有効化コード",
         "placeholder": "注文番号または有効化コードを貼り付け",
