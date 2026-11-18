@@ -1,8 +1,7 @@
 use percent_encoding::percent_decode_str;
 use std::{fs, io::Write, path::{Component, Path, PathBuf}, sync::{atomic::{AtomicU64, Ordering}, Mutex}, time::Duration};
-use tauri::{http::Response, Manager};
+use tauri::http::Response;
 
-const DEFAULT_ASSET_LIBRARY_DIRECTORY: &str = r"F:\Neowiz\Brown-Dust-2-Asset-master";
 static TEMP_FILE_ID: AtomicU64 = AtomicU64::new(0);
 
 #[derive(Default)]
@@ -40,23 +39,6 @@ fn validate_root(directory: &str) -> Result<Option<PathBuf>, String> {
 #[tauri::command]
 pub fn set_asset_library_root(state: tauri::State<AssetLibrary>, directory: String) -> Result<(), String> {
     state.set_root(&directory)
-}
-
-#[tauri::command]
-pub fn get_asset_library_root(state: tauri::State<AssetLibrary>) -> Option<String> {
-    state.root().map(|path| path.to_string_lossy().into_owned())
-}
-
-pub fn load_shared_asset_library_root(app: &tauri::AppHandle) {
-    let fallback = || PathBuf::from(DEFAULT_ASSET_LIBRARY_DIRECTORY);
-    let root = app.path().app_data_dir().ok()
-        .and_then(|app_data| app_data.parent().map(Path::to_path_buf))
-        .map(|parent| parent.join("LLsetnow").join("BD2AssetLibrary").join("root.txt"))
-        .and_then(|path| fs::read_to_string(path).ok())
-        .map(|root| root.trim().to_string())
-        .filter(|root| !root.is_empty())
-        .unwrap_or_else(|| fallback().to_string_lossy().into_owned());
-    let _ = app.state::<AssetLibrary>().set_root(&root);
 }
 
 fn relative_path(encoded: &str) -> Result<String, String> {

@@ -1,34 +1,15 @@
 import { defineStore } from 'pinia'
-import { useLocalStorage } from '@vueuse/core'
 import { readonly, ref, watch } from 'vue'
 import { convertFileSrc, invoke } from '@tauri-apps/api/core'
 import { libraryAssetUrl } from '../utils/assetLibraryUrls'
 
-function initialRoot() {
-  for (const [key, suffix] of [['DATING_AUDIO_DIRECTORY', /[\\/]audio[\\/]dating[\\/]?$/i], ['GAME_BACKGROUND_DIRECTORY', /[\\/]backgrounds[\\/]cutscene[\\/]?$/i]] as const) {
-    const value = localStorage.getItem(key)
-    if (value && suffix.test(value)) return value.replace(suffix, '')
-  }
-  return 'F:\\Neowiz\\Brown-Dust-2-Asset-master'
-}
-
 export const useAssetLibraryStore = defineStore('assetLibrary', () => {
-  const rootDirectory = useLocalStorage('ASSET_LIBRARY_ROOT', initialRoot())
-  const activeRoot = ref(rootDirectory.value)
+  const rootDirectory = ref('')
+  const activeRoot = ref('')
   const error = ref('')
-  let initialized = false
-  let ready: Promise<void> = invoke<string | null>('get_asset_library_root').then(async sharedRoot => {
-    if (sharedRoot?.trim()) rootDirectory.value = sharedRoot.trim()
-    const directory = rootDirectory.value.trim()
-    await invoke('set_asset_library_root', { directory })
-    activeRoot.value = directory
-    error.value = ''
-  }).catch(cause => {
-    error.value = String(cause)
-  }).finally(() => { initialized = true })
+  let ready: Promise<void> = Promise.resolve()
   let generation = 0
   watch(rootDirectory, directory => {
-    if (!initialized) return
     const request = ++generation
     ready = invoke('set_asset_library_root', { directory }).then(() => {
       if (request !== generation) return
@@ -37,7 +18,7 @@ export const useAssetLibraryStore = defineStore('assetLibrary', () => {
       if (request !== generation) return
       activeRoot.value = ''; error.value = String(cause)
     })
-  }, { immediate: true, flush: 'sync' })
+  }, { flush: 'sync' })
 
   function url(remote: string) {
     if (!activeRoot.value) return remote

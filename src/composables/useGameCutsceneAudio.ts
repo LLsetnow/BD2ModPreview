@@ -117,6 +117,7 @@ export function useGameCutsceneAudio(getTime: () => number) {
     else resume()
   }
   document.addEventListener('visibilitychange', visibility)
+  watch(() => library.activeRoot, () => { void reload() })
   watch(() => [ui.standingVoiceLanguage, ui.skillVoiceAudio, ui.skillSfxAudio], () => { void reload() })
   watch(() => [ui.standingVoiceVolume, ui.skillSfxVolume], updateVolume)
   onScopeDispose(() => { clear(); document.removeEventListener('visibilitychange', visibility); void context?.close() })

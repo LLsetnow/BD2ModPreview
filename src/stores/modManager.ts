@@ -45,8 +45,8 @@ export const useModManagerStore = defineStore("modManager", () => {
   async function initialize() {
     listeners.push(await listen<ManagerState>("bd2mm::state", ({ payload }) => {
       mods.value = payload.mods;
-      const directory = payload.assetLibraryDirectory?.trim()
-      if (directory && directory !== assetLibrary.rootDirectory) {
+      const directory = payload.assetLibraryDirectory?.trim() ?? ''
+      if (directory !== assetLibrary.rootDirectory) {
         assetLibrary.rootDirectory = directory
       }
       connected.value = true;

@@ -227,6 +227,15 @@ export function useDatingAudio() {
 			}
 		},
 	);
+        watch(
+                () => library.activeRoot,
+                () => {
+                        if (!scene || !ui.datingAudio) return;
+                        stop();
+                        buffers.clear();
+                        void preload();
+                },
+        );
 	onScopeDispose(() => {
 		stop();
 		generation++;
