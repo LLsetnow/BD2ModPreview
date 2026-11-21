@@ -1,3 +1,5 @@
+import type { SpineRuntime } from "../utils/spineRuntime";
+
 export interface AnimationSequence {
   name: string;
   steps: { animation: string; delay: number; duration: number | null; loop?: boolean }[][];
@@ -15,6 +17,8 @@ export interface SpineAssetsData {
 }
 
 export interface SpinePlayer {
+    spineRuntime: SpineRuntime;
+    spineAssets: SpineAssetsData;
     dispose: () => void;
     play: () => void;
     pause: () => void;

@@ -13,7 +13,7 @@ import { useUIStore } from "../stores/ui";
 
 import { useDatingAudio } from "./useDatingAudio";
 
-declare const spine: any;
+import { loadSpineSkeleton, updateSpinePose } from "../utils/spineRuntime";
 
 export function useDatingInteractions(
 	onAnimation: (animation: string) => void = () => {},
@@ -129,7 +129,7 @@ export function useDatingInteractions(
 			dragPositions.clear();
 			player.skeleton.setToSetupPose();
 			player.animationState.apply(player.skeleton);
-			player.skeleton.updateWorldTransform();
+			updateSpinePose(player.skeleton);
 		}
 		markers.value = [];
 		pointer = null;
@@ -161,7 +161,7 @@ export function useDatingInteractions(
 			player.animationState.clearTrack(1);
 			player.skeleton.setToSetupPose();
 			player.animationState.apply(player.skeleton);
-			player.skeleton.updateWorldTransform();
+			updateSpinePose(player.skeleton);
 		}
 		reaction = null;
 	}
@@ -298,7 +298,7 @@ export function useDatingInteractions(
 			dragPositions.clear();
 			player.skeleton.setToSetupPose();
 			player.animationState.apply(player.skeleton);
-			player.skeleton.updateWorldTransform();
+			updateSpinePose(player.skeleton);
 		}
 
 		hidden.clear();
@@ -453,7 +453,7 @@ export function useDatingInteractions(
 		const rect = player!.canvas.getBoundingClientRect();
 
 		return player!.sceneRenderer.camera.screenToWorld(
-			new spine.Vector3(
+			new player!.spineRuntime.Vector3(
 				((event.clientX - rect.left) * player!.canvas.width) /
 					rect.width,
 				((event.clientY - rect.top) * player!.canvas.height) /
@@ -492,7 +492,7 @@ export function useDatingInteractions(
 		reaction = state.setAnimation(1, animation, false);
 		reaction.mixDuration = 0;
 		state.apply(player!.skeleton);
-		player!.skeleton.updateWorldTransform();
+		updateSpinePose(player!.skeleton);
 	}
 
 	function pointerDown(event: PointerEvent) {
@@ -716,7 +716,7 @@ export function useDatingInteractions(
 		if (current?.started && player) {
 			player.skeleton.setToSetupPose();
 			player.animationState.apply(player.skeleton);
-			player.skeleton.updateWorldTransform();
+			updateSpinePose(player.skeleton);
 		}
 	}
 
@@ -770,7 +770,7 @@ export function useDatingInteractions(
 					dragPositions.clear();
 					player.skeleton.setToSetupPose();
 					player.animationState.apply(player.skeleton);
-					player.skeleton.updateWorldTransform();
+					updateSpinePose(player.skeleton);
 					cancelDrag();
 					clicks.clear();
 				}
@@ -811,12 +811,12 @@ export function useDatingInteractions(
 			bone.x = position.x;
 			bone.y = position.y;
 		}
-		if (dragPositions.size) player.skeleton.updateWorldTransform();
+		if (dragPositions.size) updateSpinePose(player.skeleton);
 		if (!drag?.started) return;
 		const bone = player.skeleton.findBone(drag.point.bone);
 		bone.x = drag.x;
 		bone.y = drag.y;
-		player.skeleton.updateWorldTransform();
+		updateSpinePose(player.skeleton);
 		const destinations = drag.point.destinations;
 		if (!destinations.length) return;
 		const collider = drag.point.collider.map(([x, y]) =>
@@ -875,8 +875,8 @@ export function useDatingInteractions(
 		if (cached) return cached;
 		const currentPlayer = player;
 		const request = generation;
-		const filename = player.config.skelUrl ?? player.config.jsonUrl;
-		const raw = player.config.rawDataURIs;
+		const filename = player.spineAssets.skeletonFilename;
+		const raw = player.spineAssets.rawData;
 		let skeletonUrl: string;
 		let atlasUrl: string;
 		if (raw) {
@@ -901,28 +901,15 @@ export function useDatingInteractions(
 			atlasUrl = url.href;
 		}
 		while (true) {
-			const manager = new spine.AssetManager(
-				player.sceneRenderer.context,
-			);
 			try {
-				for (const [name, data] of Object.entries(raw ?? {}))
-					manager.setRawDataURI(name, data);
-				if (skeletonUrl.split(/[?#]/)[0]!.endsWith(".json"))
-					manager.loadJson(skeletonUrl);
-				else manager.loadBinary(skeletonUrl);
-				manager.loadTextureAtlas(atlasUrl);
-				await manager.loadAll();
+				const { runtime: spine, manager, data } = await loadSpineSkeleton(
+					skeletonUrl, atlasUrl, currentPlayer.sceneRenderer.context, raw, 1, currentPlayer.spineRuntime,
+				);
 				if (request !== generation || player !== currentPlayer) {
 					manager.dispose();
 					return null;
 				}
-				const loader = new spine.AtlasAttachmentLoader(
-					manager.get(atlasUrl),
-				);
-				const reader = skeletonUrl.split(/[?#]/)[0]!.endsWith(".json")
-					? new spine.SkeletonJson(loader)
-					: new spine.SkeletonBinary(loader);
-				const data = reader.readSkeletonData(manager.get(skeletonUrl));
+
 				const skeleton = new spine.Skeleton(data);
 				const stateData = new spine.AnimationStateData(data);
 				stateData.defaultMix = player.config.defaultMix;
@@ -935,7 +922,6 @@ export function useDatingInteractions(
 				poseResults = [];
 				return loaded;
 			} catch (error) {
-				manager.dispose();
 				if (request !== generation || player !== currentPlayer)
 					return null;
 				const results = describeLoadError(
@@ -1064,7 +1050,7 @@ export function useDatingInteractions(
 					onAnimation(next.animation);
 				}
 				player.animationState.apply(player.skeleton);
-				player.skeleton.updateWorldTransform();
+				updateSpinePose(player.skeleton);
 				switching = false;
 			};
 			onMotion?.();
@@ -1084,7 +1070,7 @@ export function useDatingInteractions(
 		} catch (error) {
 			if (request !== generation) return;
 			switching = false;
-			const origin = player?.config.rawDataURIs ? "folder" : "online";
+			const origin = player?.spineAssets.rawData ? "folder" : "online";
 			if (!poseResults.length)
 				poseResults.push(...describeLoadError(error, origin));
 			poseError.value = {
@@ -1126,7 +1112,7 @@ export function useDatingInteractions(
 			const corners = point.corners.map(([x, y]) => {
 				const world = bone.localToWorld({ x, y });
 				const screen = player!.sceneRenderer.camera.worldToScreen(
-					new spine.Vector3(world.x, world.y, 0),
+					new player!.spineRuntime.Vector3(world.x, world.y, 0),
 					canvas.width,
 					canvas.height,
 				);

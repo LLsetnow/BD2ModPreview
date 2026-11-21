@@ -6,7 +6,7 @@ import { useUIStore } from '../stores/ui'
 import { useLogger } from './useLogger'
 import { standingSkeleton, containsTriangle } from '../utils/standingInteractions'
 
-declare const spine: any
+
 const catalogs = new Map<string, Promise<StandingVoiceCatalog>>()
 
 export function useStandingInteractions(options: { canInteract: () => boolean; beforePlay: () => void; isPaused: () => boolean; isSlotVisible: (name: string) => boolean }) {
@@ -159,7 +159,7 @@ export function useStandingInteractions(options: { canInteract: () => boolean; b
     if (!enabled.value || !player || !options.canInteract()) return false
     const rect = player.canvas.getBoundingClientRect()
     if (!rect.width || !rect.height) return false
-    const point = player.sceneRenderer.camera.screenToWorld(new spine.Vector3(
+    const point = player.sceneRenderer.camera.screenToWorld(new player.spineRuntime.Vector3(
       (event.clientX - rect.left) * player.canvas.width / rect.width,
       (event.clientY - rect.top) * player.canvas.height / rect.height, 0), player.canvas.width, player.canvas.height)
     const shapes: { vertices: number[]; triangles: number[]; extent: number }[] = []
@@ -168,9 +168,9 @@ export function useStandingInteractions(options: { canInteract: () => boolean; b
       if (!options.isSlotVisible(slot.data.name) || !attachment || slot.color.a <= 0.01 || (attachment.color?.a ?? 1) <= 0.01 || !slot.bone.active) continue
       const vertices: number[] = []
       let triangles: number[]
-      if (attachment instanceof spine.RegionAttachment) {
+      if (attachment instanceof player.spineRuntime.RegionAttachment) {
         attachment.computeWorldVertices(slot, vertices, 0, 2); triangles = [0, 1, 2, 2, 3, 0]
-      } else if (attachment instanceof spine.MeshAttachment) {
+      } else if (attachment instanceof player.spineRuntime.MeshAttachment) {
         attachment.computeWorldVertices(slot, 0, attachment.worldVerticesLength, vertices, 0, 2); triangles = attachment.triangles
       } else continue
       let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity

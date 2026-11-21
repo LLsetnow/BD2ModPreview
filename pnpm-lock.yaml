@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@esotericsoftware/spine-player':
+        specifier: 4.2.120
+        version: 4.2.120
       '@floating-ui/vue':
         specifier: ^2.0.1
         version: 2.0.1(vue@3.5.44(typescript@6.0.3))
@@ -85,6 +88,15 @@ packages:
   '@babel/types@7.29.11':
     resolution: {integrity: sha512-WCsemW40Cpc6gouC1SrY6PBaZ+oLRlEVY9XBvZBI7il/HyUrb2nJ505wE1MHEFyDZNnrWDEuy4jL50WVHfTTSQ==}
     engines: {node: '>=6.9.0'}
+
+  '@esotericsoftware/spine-core@4.2.120':
+    resolution: {integrity: sha512-X62MPnfiZTWok4Wk5Q5DqaAUBUFypKpb94IVd1W/j4eLHhg0HH3tve4HvIlkgxDpls2NokHaAtzjxX12rJknOA==}
+
+  '@esotericsoftware/spine-player@4.2.120':
+    resolution: {integrity: sha512-N3LVJp0DkyK/h4AntTDedwDqLxrWYK9gedi0qWcrstgu/h7RYfdrXviza8qKt11v5dlyWpZACWbXLGicWbqfFA==}
+
+  '@esotericsoftware/spine-webgl@4.2.120':
+    resolution: {integrity: sha512-xhITm18dZ6DclPaI1jEiTVOoXYQASsubbDEs3Ik1AjmVSXdNFtvdvzLVwhPQ8eHu1OXsxtWfuW+wpGHib8V4hw==}
 
   '@floating-ui/core@1.8.0':
     resolution: {integrity: sha512-0CIZ5itps/8x7BG8dEIhs53BvCUH2PCoogtakwRTut+Arm58sJooJ0AuZhLw2HJYIR5cMLNPBSS728sPho2khQ==}
@@ -696,6 +708,16 @@ snapshots:
     dependencies:
       '@babel/helper-string-parser': 7.29.11
       '@babel/helper-validator-identifier': 7.29.7
+
+  '@esotericsoftware/spine-core@4.2.120': {}
+
+  '@esotericsoftware/spine-player@4.2.120':
+    dependencies:
+      '@esotericsoftware/spine-webgl': 4.2.120
+
+  '@esotericsoftware/spine-webgl@4.2.120':
+    dependencies:
+      '@esotericsoftware/spine-core': 4.2.120
 
   '@floating-ui/core@1.8.0':
     dependencies:

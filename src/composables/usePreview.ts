@@ -26,7 +26,7 @@ import type {
 	LoadStepState,
 } from "../types/spine";
 
-declare const spine: any;
+import { atlasDataUri, readSpineSource, spineSourceUrl, updateSpinePose } from "../utils/spineRuntime";
 
 export function usePreview(
 	id: string,
@@ -89,6 +89,7 @@ export function usePreview(
 	let loadId = 0;
 	let playbackChoice = 0;
 	let spinePlayer: SpinePlayer | null = null;
+	let releaseSkeletonUrl: (() => void) | undefined;
 	let audioStateListener: any = null;
 	let activeAudio: HTMLAudioElement | null = null;
 	let audioPlaybackToken = 0;
@@ -545,17 +546,18 @@ export function usePreview(
 				!!entry.loop,
 				null,
 				1,
-				spine.MixBlend.replace,
-				spine.MixDirection.mixIn,
+				spinePlayer.spineRuntime.MixBlend.replace,
+				spinePlayer.spineRuntime.MixDirection.mixIn,
 			);
 		}
 
-		skeleton.updateWorldTransform();
+		updateSpinePose(skeleton);
 	}
 
 	// Skeleton bounds without huge backdrop meshes (dating illusts have one), which would zoom the camera way out.
 	function characterBounds(offset: any, size: any) {
 		const rects: number[][] = [];
+		const spine = spinePlayer!.spineRuntime;
 
 		for (const slot of spinePlayer!.skeleton.drawOrder) {
 			const attachment = slot.attachment;
@@ -606,8 +608,8 @@ export function usePreview(
 	function fitCharacter() {
 		if (!spinePlayer) return;
 
-		const offset = new spine.Vector2();
-		const size = new spine.Vector2();
+		const offset = new spinePlayer.spineRuntime.Vector2();
+		const size = new spinePlayer.spineRuntime.Vector2();
 
 		characterBounds(offset, size);
 
@@ -630,8 +632,8 @@ export function usePreview(
 	function centerCharacter() {
 		if (!spinePlayer || !camera) return;
 
-		const offset = new spine.Vector2();
-		const size = new spine.Vector2();
+		const offset = new spinePlayer.spineRuntime.Vector2();
+		const size = new spinePlayer.spineRuntime.Vector2();
 
 		characterBounds(offset, size);
 		camera.x = offset.x + size.x / 2;
@@ -819,7 +821,7 @@ export function usePreview(
 		if (!spinePlayer) return;
 		spinePlayer.skeleton.setToSetupPose();
 		spinePlayer.animationState.apply(spinePlayer.skeleton);
-		spinePlayer.skeleton.updateWorldTransform();
+		updateSpinePose(spinePlayer.skeleton);
 	}
 
 	function restart() {
@@ -1000,7 +1002,7 @@ export function usePreview(
 			assets.atlasFilename = firstPart.replace(/\.(skel|json)$/i, ".atlas");
 		}
 
-		initializePlayer(createPlayerConfig(assets), request);
+		await initializePlayer(createPlayerConfig(assets), assets, request);
 	}
 
 	async function loadSpineFromUrl(
@@ -1012,10 +1014,11 @@ export function usePreview(
 	) {
 		await library.ready();
 		if (request !== loadId) return;
-		const config = createPlayerConfig({
+		const assets = {
 			skeletonFilename: library.url(skeletonUrl),
 			atlasFilename: library.url(atlasUrl),
-		});
+		};
+		const config = createPlayerConfig(assets);
 
 		config.error = async (_player: SpinePlayer, message: string) => {
 			if (request !== loadId) return;
@@ -1040,7 +1043,11 @@ export function usePreview(
 			} else showError(message, request, true);
 		};
 
-		initializePlayer(config, request);
+		try {
+			await initializePlayer(config, assets, request);
+		} catch (error) {
+			await config.error(undefined, error instanceof Error ? error.message : String(error));
+		}
 	}
 
 	function createPlayerConfig(assetsData: SpineAssetsData) {
@@ -1051,6 +1058,7 @@ export function usePreview(
 			showLoading: false,
 			premultipliedAlpha: settings.value?.premultipliedAlpha,
 			draw: (player: SpinePlayer) => {
+				const spine = player.spineRuntime;
 				for (const [slot, attachment] of hiddenAttachments)
 					slot.attachment = attachment;
 				hiddenAttachments.clear();
@@ -1123,7 +1131,7 @@ export function usePreview(
 				? settings.value.background.color
 				: "#00000000";
 
-		const skeletonPath = assetsData.skeletonFilename.split(/[?#]/)[0]!;
+		const skeletonPath = assetsData.skeletonFilename.split(/[?#]/)[0]!.toLowerCase();
 		if (skeletonPath.endsWith(".json")) {
 			config.jsonUrl = assetsData.skeletonFilename;
 		} else if (skeletonPath.endsWith(".skel")) {
@@ -1139,20 +1147,32 @@ export function usePreview(
 		return config;
 	}
 
-	function initializePlayer(config: any, request: number) {
-		if (!playerContainer.value) return;
+	async function initializePlayer(config: any, assets: SpineAssetsData, request: number) {
+		const skeletonSource = await readSpineSource(assets.skeletonFilename, assets.rawData);
+		if (request !== loadId || !playerContainer.value) return;
 		destroyPlayer();
+		const { runtime } = skeletonSource;
+		const sourceUrl = spineSourceUrl(skeletonSource);
+		releaseSkeletonUrl = sourceUrl.release;
+		if (skeletonSource.json) config.jsonUrl = sourceUrl.url;
+		else config.skelUrl = sourceUrl.url;
+		if (assets.rawData) {
+			config.rawDataURIs = Object.fromEntries(Object.entries(assets.rawData)
+				.map(([name, data]) => [name, atlasDataUri(name, data, runtime)]));
+		}
 
 		const onError = config.error;
 
 		config.success = (player: SpinePlayer) => {
+			sourceUrl.release();
 			if (request !== loadId) return;
 
 			logMessage(
 				JSON.stringify({
 					source: source.value,
 					result: "Loaded",
-					skeleton: config.skelUrl ?? config.jsonUrl,
+					spineVersion: skeletonSource.version,
+					skeleton: assets.skeletonFilename,
 					atlas: config.atlasUrl,
 				}),
 				"info",
@@ -1165,6 +1185,7 @@ export function usePreview(
 		};
 
 		config.error = (player: SpinePlayer, message: string) => {
+			sourceUrl.release();
 			if (request !== loadId) return;
 			if (onError) onError(player, message);
 			else showError(message, request);
@@ -1179,10 +1200,10 @@ export function usePreview(
 		};
 
 		playerContainer.value.innerHTML = "";
-		const player: SpinePlayer = new spine.SpinePlayer(
-			playerContainer.value,
-			config,
-		);
+		const player = Object.assign(new runtime.SpinePlayer(playerContainer.value, config), {
+			spineRuntime: runtime,
+			spineAssets: assets,
+		}) as unknown as SpinePlayer;
 
 		spinePlayer = player;
 		trackLoadSteps(player, config, request);
@@ -1205,9 +1226,9 @@ export function usePreview(
 		};
 
 		const stateOf = (path: string): LoadStepState =>
-			path in manager.getErrors()
+			manager.getErrors()?.[path] !== undefined
 				? "error"
-				: path in manager.assets
+				: manager.get(path) !== undefined
 					? "done"
 					: "loading";
 
@@ -1225,7 +1246,11 @@ export function usePreview(
 						? "done"
 						: "loading";
 			const steps: LoadStep[] = [
-				{ key: skeletonPath, name: baseName(skeletonPath), state: stateOf(skeletonPath) },
+				{
+					key: skeletonPath,
+					name: baseName(player.spineAssets.skeletonFilename),
+					state: stateOf(skeletonPath),
+				},
 				{
 					key: atlasPath,
 					name: baseName(atlasPath),
@@ -1256,12 +1281,13 @@ export function usePreview(
 
 	// Some dating skeletons (e.g. illust_dating10) draw nothing with the default skin; their images are in the named skins.
 	function pickVisibleSkin(player: SpinePlayer) {
+		const spine = player.spineRuntime;
 		const skeleton = player.skeleton;
 
 		const drawsImages = () => {
 			skeleton.setToSetupPose();
 			player.animationState.apply(skeleton);
-			skeleton.updateWorldTransform();
+			updateSpinePose(skeleton);
 
 			return skeleton.drawOrder.some(
 				(slot: any) =>
@@ -1327,12 +1353,12 @@ export function usePreview(
 
 		datingInteraction.load(
 			player,
-			player.config.skelUrl ?? player.config.jsonUrl ?? "",
+			player.spineAssets.skeletonFilename,
 		);
 
 		const currentLoad = loadId, initialChoice = playbackChoice;
 		cutscene
-			.load(player, player.config.skelUrl ?? player.config.jsonUrl ?? "")
+			.load(player, player.spineAssets.skeletonFilename)
 			.then(() => {
 				// Prefer the complete game performance once its timeline is ready.
 				if (spinePlayer === player && loadId === currentLoad &&
@@ -1342,14 +1368,16 @@ export function usePreview(
 			.catch((error) =>
 				logMessage(`Cutscene could not be loaded: ${error}`, "error"),
 			);
-		illustrationBackground.load(player.config.skelUrl ?? player.config.jsonUrl ?? "");
-		standing.load(player, player.config.skelUrl ?? player.config.jsonUrl ?? "");
+		illustrationBackground.load(player.spineAssets.skeletonFilename);
+		standing.load(player, player.spineAssets.skeletonFilename);
 
 		if (paused.value) player.pause();
 		else player.play();
 	}
 
 	function destroyPlayer() {
+		releaseSkeletonUrl?.();
+		releaseSkeletonUrl = undefined;
 		standing.clear();
 		illustrationBackground.clear();
 		stopActiveAudio();

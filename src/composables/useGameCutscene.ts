@@ -96,7 +96,7 @@ export type Scene = {
 	};
 };
 
-declare const spine: any;
+import { loadSpineSkeleton, updateSpinePose, type SpineRuntime } from "../utils/spineRuntime";
 
 type Curve = {
 	start?: number;
@@ -148,6 +148,8 @@ export function useGameCutscene(
 	const active = ref(false);
 	let player: SpinePlayer | null = null;
 	let skeletons = new Map<number, any>();
+	const skeletonRuntimes = new Map<number, SpineRuntime>();
+	const alternateRenderers = new Map<SpineRuntime, any>();
 	let states = new Map<number, any>();
 	let entries: any[] = [];
 	let events: {
@@ -184,6 +186,8 @@ export function useGameCutscene(
 		for (const manager of assetManagers) manager.dispose();
 		assetManagers = [];
 		skeletons.clear();
+		skeletonRuntimes.clear();
+		alternateRenderers.clear();
 		states.clear();
 		entries = [];
 		events = [];
@@ -222,30 +226,18 @@ export function useGameCutscene(
 		const request = generation;
 		const timeline = await loadCutscene(id);
 		if (request !== generation || !timeline) return;
-		const data = new Map<string, any>([["", value.skeleton.data]]);
+		const assets = new Map([["", { data: value.skeleton.data, runtime: value.spineRuntime }]]);
 		const managers: any[] = [];
 		for (const [key, asset] of Object.entries(timeline.assets ?? {})) {
 			const base = `${import.meta.env.BASE_URL}cutscene-assets/${id}/${key}/`;
-			const manager = new spine.AssetManager(value.sceneRenderer.context);
 			try {
-				manager.loadBinary(base + "skeleton.skel");
-				manager.loadTextureAtlas(base + "skeleton.atlas");
-				await manager.loadAll();
-				const reader = new spine.SkeletonBinary(
-					new spine.AtlasAttachmentLoader(
-						manager.get(base + "skeleton.atlas"),
-					),
+				const { data, runtime, manager } = await loadSpineSkeleton(
+					base + "skeleton.skel", base + "skeleton.atlas", value.sceneRenderer.context.gl,
+					undefined, asset.scale,
 				);
-				reader.scale = asset.scale;
-				data.set(
-					key,
-					reader.readSkeletonData(
-						manager.get(base + "skeleton.skel"),
-					),
-				);
+				assets.set(key, { data, runtime });
 				managers.push(manager);
 			} catch (error) {
-				manager.dispose();
 				if (request === generation) {
 					logMessage(
 						`Cutscene ${id}: skipping skeleton ${key}: ${error}`,
@@ -259,15 +251,13 @@ export function useGameCutscene(
 			}
 		}
 		const tracks = timeline.tracks.filter((track) =>
-			data.has(timeline.nodes[track.node].asset ?? ""),
+			assets.has(timeline.nodes[track.node].asset ?? ""),
 		);
 		if (
 			!tracks.length ||
 			!tracks.every((track) =>
 				track.clips.every((clip) =>
-					data
-						.get(timeline.nodes[track.node].asset ?? "")
-						.findAnimation(clip.name),
+					assets.get(timeline.nodes[track.node].asset ?? "")!.data.findAnimation(clip.name),
 				),
 			)
 		) {
@@ -281,9 +271,9 @@ export function useGameCutscene(
 		player = value;
 		for (const track of scene.tracks) {
 			if (skeletons.has(track.node)) continue;
-			const skeleton = new spine.Skeleton(
-				data.get(scene.nodes[track.node].asset ?? ""),
-			);
+			const { runtime, data } = assets.get(scene.nodes[track.node].asset ?? "")!;
+			const skeleton = new runtime.Skeleton(data);
+			skeletonRuntimes.set(track.node, runtime);
 			if (!scene.nodes[track.node].asset && value.skeleton.skin)
 				skeleton.setSkin(value.skeleton.skin);
 			skeletons.set(track.node, skeleton);
@@ -424,6 +414,11 @@ export function useGameCutscene(
 			animationTime = 0;
 			for (const [index, skeleton] of skeletons) {
 				skeleton.setToSetupPose();
+				const spine = skeletonRuntimes.get(index)!;
+				if (spine.Physics && skeleton.physicsConstraints.length) {
+					skeleton.time = 0;
+					skeleton.updateWorldTransform(spine.Physics.reset);
+				}
 				const data = new spine.AnimationStateData(skeleton.data);
 				data.defaultMix = scene.nodes[index].defaultMix ?? 0;
 				for (const mix of scene.nodes[index].mixes ?? [])
@@ -473,8 +468,13 @@ export function useGameCutscene(
 				if (settings) {
 					entry.alpha = settings.alpha;
 					entry.holdPrevious = !!settings.holdPrevious;
-					entry.attachmentThreshold = settings.attachmentThreshold;
-					entry.drawOrderThreshold = settings.drawOrderThreshold;
+					if ("mixAttachmentThreshold" in entry) {
+						entry.mixAttachmentThreshold = settings.attachmentThreshold;
+						entry.mixDrawOrderThreshold = settings.drawOrderThreshold;
+					} else {
+						entry.attachmentThreshold = settings.attachmentThreshold;
+						entry.drawOrderThreshold = settings.drawOrderThreshold;
+					}
 					entry.eventThreshold = settings.eventThreshold;
 				}
 				entries[event.track] = { entry, settings };
@@ -503,8 +503,15 @@ export function useGameCutscene(
 		while (animationTime < target) {
 			const next = Math.min(target, animationTime + 1 / 60);
 			for (const [node, state] of states) {
-				state.update(next - animationTime);
-				state.apply(skeletons.get(node));
+				const delta = next - animationTime;
+				const skeleton = skeletons.get(node);
+				state.update(delta);
+				state.apply(skeleton);
+				const physics = skeletonRuntimes.get(node)?.Physics;
+				if (physics && skeleton.physicsConstraints.length) {
+					skeleton.update(delta);
+					skeleton.updateWorldTransform(physics.update);
+				}
 			}
 			animationTime = next;
 		}
@@ -568,7 +575,7 @@ export function useGameCutscene(
 	) {
 		const gl = context.gl;
 		gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, premultiply);
-		const texture = new spine.GLTexture(context, image);
+		const texture = new player!.spineRuntime.GLTexture(context, image);
 		gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
 		if (scene?.textures?.[hash]?.repeat)
 			texture.setWraps(gl.REPEAT, gl.REPEAT);
@@ -666,7 +673,7 @@ void main() {
 				);
 			linear = {
 				gl,
-				shader: new spine.Shader(renderer.context, vs, fs),
+				shader: new player!.spineRuntime.Shader(renderer.context, vs, fs),
 				copy,
 				texture,
 				framebuffer,
@@ -728,7 +735,8 @@ void main() {
 			const g = canvas.getContext("2d")!;
 			g.fillStyle = "#fff";
 			g.fillRect(0, 0, 1, 1);
-			whiteTexture = new spine.GLTexture(context, canvas);
+			// GLTexture uploads via texImage2D, which also accepts a canvas.
+			whiteTexture = new player!.spineRuntime.GLTexture(context, canvas as unknown as ImageBitmap);
 		}
 		return whiteTexture;
 	}
@@ -896,7 +904,7 @@ void main() {
 			euler: { ...(node.euler ?? { x: 0, y: 0, z: node.rotation ?? 0 }) },
 			groupAlpha: node.groupAlpha ?? 1,
 			rotated: false,
-			matrix: new spine.Matrix4(),
+			matrix: new player!.spineRuntime.Matrix4(),
 			localZ: null as number | null,
 			localX: null as number | null,
 			localY: null as number | null,
@@ -1041,7 +1049,7 @@ void main() {
 				1,
 			]);
 			if (parent)
-				node.matrix = new spine.Matrix4()
+				node.matrix = new player!.spineRuntime.Matrix4()
 					.set(parent.matrix.values)
 					.multiply(node.matrix);
 		}
@@ -1081,27 +1089,41 @@ void main() {
 				node.color.b,
 				node.color.a * node.groupAlpha,
 			);
-			skeleton.updateWorldTransform();
-			renderer.drawSkeleton(
-				skeleton,
-				player!.config.premultipliedAlpha,
-				-1,
-				-1,
-				(vertices: number[], length: number, stride: number) => {
-					for (let i = 0; i < length; i += stride) {
-						const x = vertices[i],
-							y = vertices[i + 1];
-						vertices[i] =
-							node.matrix.values[12] +
-							x * node.matrix.values[0] +
-							y * node.matrix.values[4];
-						vertices[i + 1] =
-							node.matrix.values[13] +
-							x * node.matrix.values[1] +
-							y * node.matrix.values[5];
-					}
-				},
-			);
+			updateSpinePose(skeleton);
+			const spine = skeletonRuntimes.get(index)!;
+			const originalRenderer = renderer.skeletonRenderer;
+			if (spine !== player!.spineRuntime) {
+				let alternate = alternateRenderers.get(spine);
+				if (!alternate) {
+					alternate = new spine.SkeletonRenderer(renderer.context.gl, renderer.twoColorTint);
+					alternateRenderers.set(spine, alternate);
+				}
+				renderer.skeletonRenderer = alternate;
+			}
+			try {
+				renderer.drawSkeleton(
+					skeleton,
+					player!.config.premultipliedAlpha,
+					-1,
+					-1,
+					(vertices: number[], length: number, stride: number) => {
+						for (let i = 0; i < length; i += stride) {
+							const x = vertices[i],
+								y = vertices[i + 1];
+							vertices[i] =
+								node.matrix.values[12] +
+								x * node.matrix.values[0] +
+								y * node.matrix.values[4];
+							vertices[i + 1] =
+								node.matrix.values[13] +
+								x * node.matrix.values[1] +
+								y * node.matrix.values[5];
+						}
+					},
+				);
+			} finally {
+				renderer.skeletonRenderer = originalRenderer;
+			}
 		};
 		if (!baked) nodes.forEach(drawNode);
 		else {
