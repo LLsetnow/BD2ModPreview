@@ -5,7 +5,6 @@ import { saveWindowState, StateFlags } from '@tauri-apps/plugin-window-state'
 import { UnlistenFn } from '@tauri-apps/api/event'
 import { getCurrentWebview } from '@tauri-apps/api/webview'
 
-import { updateCutscenes } from "./utils/cutsceneData"
 
 import { usePreviewDrag } from './composables/usePreviewDrag'
 
@@ -15,6 +14,8 @@ import { getMatches } from '@tauri-apps/plugin-cli'
 
 import { usePreviewerStore } from "./stores/previewer.ts"
 import { useCharactersStore } from "./stores/characters"
+import { useAssetCatalogStore } from "./stores/assetCatalog"
+import { useAssetLibraryStore } from "./stores/assetLibrary"
 import { useModManagerStore } from "./stores/modManager"
 import { useUIStore } from "./stores/ui"
 import { useLogger } from "./composables/useLogger"
@@ -36,6 +37,8 @@ const { logMessage, clearLogs } = useLogger()
 const uiStore = useUIStore()
 const modManager = useModManagerStore()
 const charactersStore = useCharactersStore()
+const assetCatalog = useAssetCatalogStore()
+const assetLibrary = useAssetLibraryStore()
 const previewerStore = usePreviewerStore()
 const { t } = useI18n()
 
@@ -184,15 +187,23 @@ onMounted(async () => {
 
   logMessage('Application starting...')
 
+  await assetLibrary.initialize()
   await loadFromCli()
   await uiStore.loadLanguage()
 
-  // these functions we dont need to wait because they are not critical for the app to start, but we want to run them in parallel to save time
+  async function initializeAssetData() {
+    try {
+      await modManager.initialize()
+    } catch (error) {
+      logMessage(`Could not connect to Mod Manager: ${error}`, 'warning')
+    }
+    await Promise.allSettled([assetCatalog.load(), charactersStore.loadCharacters()])
+  }
+
+  // Asset metadata is loaded after Mod Manager supplies the configured shared asset directory.
   void Promise.allSettled([
     initializeDragAndDrop(),
-    modManager.initialize(),
-    charactersStore.loadCharacters(),
-    updateCutscenes(),
+    initializeAssetData(),
     uiStore.checkSupporter().catch(error => {
       logMessage(`Failed to check supporter access: ${error}`, "error")
     })

@@ -95,6 +95,7 @@ pub fn run() {
             ipc::enable_mod_on_bd2mm,
             dating_audio::get_dating_audio,
             asset_library::set_asset_library_root,
+            asset_library::get_shared_asset_library_root,
             dating_export::export_dating_scene,
             game_backgrounds::get_game_background,
             game_backgrounds::has_game_backgrounds,

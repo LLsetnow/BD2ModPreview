@@ -1349,7 +1349,7 @@ export function usePreview(
 		applyPose();
 		pickVisibleSkin(player);
 		setupCamera(player);
-		minigame.load(player);
+		void minigame.load(player);
 
 		datingInteraction.load(
 			player,
@@ -1388,7 +1388,7 @@ export function usePreview(
 		audioStateListener = null;
 		cutscene.dispose();
 		previousCamera = null;
-		minigame.load(null);
+		void minigame.load(null);
 		datingInteraction.load(null);
 		activeSequence.value = null;
 		cameraListeners?.abort();

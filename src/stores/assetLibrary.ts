@@ -8,6 +8,7 @@ export const useAssetLibraryStore = defineStore('assetLibrary', () => {
   const activeRoot = ref('')
   const error = ref('')
   let ready: Promise<void> = Promise.resolve()
+  let initializing: Promise<void> | undefined
   let generation = 0
   watch(rootDirectory, directory => {
     const request = ++generation
@@ -27,5 +28,16 @@ export const useAssetLibraryStore = defineStore('assetLibrary', () => {
   function localUrl(relative: string) {
     return libraryAssetUrl(convertFileSrc('', 'bd2library'), activeRoot.value, 'https://cdn.jsdelivr.net/gh/LLsetnow/Brown-Dust-2-Asset@master/' + relative)
   }
-  return { rootDirectory, activeRoot: readonly(activeRoot), error: readonly(error), ready: () => ready, url, localUrl }
+  function initialize() {
+    return initializing ??= (async () => {
+      try {
+        const directory = await invoke<string | null>('get_shared_asset_library_root')
+        if (!rootDirectory.value && directory) rootDirectory.value = directory
+        await ready
+      } catch (cause) {
+        error.value = String(cause)
+      }
+    })()
+  }
+  return { rootDirectory, activeRoot: readonly(activeRoot), error: readonly(error), ready: () => ready, initialize, url, localUrl }
 })

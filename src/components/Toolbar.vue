@@ -10,14 +10,16 @@ import { autoUpdate, flip, offset, shift, useFloating } from "@floating-ui/vue"
 
 import { usePreviewerStore } from "../stores/previewer"
 import { useUIStore } from "../stores/ui"
+import { useAssetLibraryStore } from "../stores/assetLibrary"
 import { useNetworkStatus } from "../composables/useNetworkStatus"
-import { NOVEL_BACKGROUNDS, novelThumbnail, loadNovelBackground } from "../data/novelBackgrounds"
+import { novelBackgroundIds, novelThumbnail, loadNovelBackground } from "../data/novelBackgrounds"
 
 defineProps<{ charactersOpen: boolean }>()
 
 const emit = defineEmits<{ characters: [] }>()
 const { t } = useI18n()
 const uiStore = useUIStore()
+const library = useAssetLibraryStore()
 const previewerStore = usePreviewerStore()
 
 const backgroundOpen = ref(false)
@@ -68,7 +70,7 @@ const currentColor = computed(() => {
   return value?.type === "color" ? value.color.toLowerCase() : ""
 })
 
-const shortlist = NOVEL_BACKGROUNDS.slice(0, 3)
+const shortlist = computed(() => novelBackgroundIds().slice(0, 3))
 const { isConnected, isChecking, checkConnection } = useNetworkStatus()
 async function applyShortlist(id: number) {
   const url = await loadNovelBackground(id)
@@ -166,7 +168,7 @@ function selectBackground(event: Event) {
           {{ t('backgroundsPanel.seeAllShort') }}<ChevronRight :size="14" aria-hidden="true" />
         </button>
       </div>
-      <div v-if="!isConnected" class="background-popover-notice" role="status">
+      <div v-if="!isConnected && !library.activeRoot" class="background-popover-notice" role="status">
         <span>{{ t('backgroundsPanel.offline') }}</span>
         <button type="button" class="background-link" :disabled="isChecking" @click="checkConnection()">
           <RefreshCw :size="14" aria-hidden="true" />{{ t('common.retry') }}

@@ -2,6 +2,7 @@ import csv
 import json
 import pathlib
 import logging
+import argparse
 
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 
@@ -14,16 +15,6 @@ CUTSCENES_DIR = PUBLIC_DIR / "cutscenes"
 DATINGS_DIR = PUBLIC_DIR / "datings"
 THUMBNAIL_IMG_DIR = PUBLIC_DIR / "illust_inven_char"
 SKILL_IMG_DIR = PUBLIC_DIR / "illust_skill_char"
-
-DATING_ID_MAP = {
-    "003303": "1",
-    "003402": "2",
-    "003203": "3",
-    "001106": "4",
-    "060802": "5",
-    "067603": "6",
-    "000296": "7",
-}
 
 def find_asset_file(directory: pathlib.Path, name_pattern: str) -> str | None:
     try:
@@ -54,11 +45,17 @@ def get_spine_data(base_path: pathlib.Path, folder_name: str) -> dict | None:
         return None
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--catalog", type=pathlib.Path, default=PUBLIC_DIR / "data" / "characters.json")
+    args = parser.parse_args()
     try:
+        with args.catalog.open(encoding="utf-8") as catalog_file:
+            catalog = json.load(catalog_file)
+        dating_ids = {str(costume): str(scene) for scene, costume in catalog["dating"].items()}
         with open(CSV_PATH, "r", encoding="utf-8") as f:
             characters_base_data = list(csv.DictReader(f))
-    except FileNotFoundError:
-        logging.error(f"FATAL: Character CSV not found at '{CSV_PATH}'. Exiting.")
+    except (OSError, ValueError, KeyError, TypeError, AttributeError) as error:
+        logging.error("Unable to load the character inputs: %s", error)
         return
 
     processed_characters = []
@@ -79,7 +76,7 @@ def main():
         cutscene_data = get_spine_data(CUTSCENES_DIR, f"cutscene_char{char_id}")
         
         dating_data = None
-        dating_story_id = DATING_ID_MAP.get(char_id)
+        dating_story_id = dating_ids.get(char_id)
         if dating_story_id:
             dating_data = get_spine_data(DATINGS_DIR, f"illust_dating{dating_story_id}")
 

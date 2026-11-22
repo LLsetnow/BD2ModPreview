@@ -1,14 +1,16 @@
 import { computed, ref, shallowRef, watch } from "vue";
 import {
-	minigames,
+	createMinigameDefinition,
 	type MinigameAction,
 	type MinigameDefinition,
 } from "../data/minigames";
 import { useMinigameAudio } from "./useMinigameAudio";
 import type { SpinePlayer } from "../types/spine";
+import { useAssetCatalogStore } from "../stores/assetCatalog";
 
 export function useMinigameInteractions() {
 	const audio = useMinigameAudio();
+	const catalog = useAssetCatalogStore();
 	const definition = shallowRef<MinigameDefinition | null>(null);
 	const enabled = ref(false);
 	const character = ref("");
@@ -37,7 +39,7 @@ export function useMinigameInteractions() {
 	let previousAnimation = "";
 	let previousLoop = true;
 
-	function load(value: SpinePlayer | null) {
+	async function load(value: SpinePlayer | null) {
 		enabled.value = false;
 		cancel();
 		player = value;
@@ -45,6 +47,15 @@ export function useMinigameInteractions() {
 			value?.skeleton.data.animations.map(
 				(animation: { name: string }) => animation.name,
 			) ?? [];
+		if (!value) {
+			definition.value = null;
+			characters.value = [];
+			character.value = "";
+			return;
+		}
+		await catalog.load();
+		if (player !== value) return;
+		const minigames = (catalog.catalog?.minigames ?? []).map(createMinigameDefinition);
 		definition.value =
 			minigames.find(
 				(game) =>

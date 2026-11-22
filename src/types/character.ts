@@ -29,5 +29,7 @@ export interface Character {
         head_image: string,
         character_image: string,
         skill_image: string,
+        standing_skeleton?: string,
+        cutscene_skeleton?: string,
     },
 }

@@ -11,7 +11,7 @@ import { useNetworkStatus } from '../../composables/useNetworkStatus'
 import { usePreviewerStore } from '../../stores/previewer'
 import { useUIStore } from '../../stores/ui'
 import { useAssetLibraryStore } from '../../stores/assetLibrary'
-import { NOVEL_BACKGROUNDS, novelThumbnail, loadNovelBackground } from '../../data/novelBackgrounds'
+import { novelBackgroundIds, novelThumbnail, loadNovelBackground } from '../../data/novelBackgrounds'
 import NoInternetState from '../NoInternetState.vue'
 
 const props = defineProps<{ show: boolean }>()
@@ -36,7 +36,8 @@ watch(() => props.show, (show) => {
 
 const backgrounds = computed(() => {
   const text = search.value.trim().replace(/^#/, '')
-  return text ? NOVEL_BACKGROUNDS.filter(id => String(id).includes(text)) : NOVEL_BACKGROUNDS
+  const ids = novelBackgroundIds()
+  return text ? ids.filter(id => String(id).includes(text)) : ids
 })
 
 async function apply(id: number | null) {
