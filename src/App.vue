@@ -112,6 +112,10 @@ async function loadFromCli(): Promise<void> {
       uiStore.language = langArg
     }
 
+    if (matches.args["show-sidebar"]?.value === true) {
+      isCharacterListVisible.value = true
+    }
+
     const pathArg = matches.args.path?.value
 
     const paths = Array.isArray(pathArg) ? pathArg : typeof pathArg === 'string' ? [pathArg] : []
