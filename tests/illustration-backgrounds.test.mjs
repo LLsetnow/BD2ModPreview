@@ -8,6 +8,9 @@ test('official illustrations use the background associated with their design, in
   assert.equal(findIllustrationBackground('illust_char000102_44.json').resource, 'novel_background_53')
   assert.equal(findIllustrationBackground('illust_char001207_114.skel').resource, 'novel_background_131')
   assert.equal(findIllustrationBackground('illust_char001297_229.skel').resource, 'novel_background_131')
+  assert.deepEqual(findIllustrationBackground('http://bd2library.localhost/spine-4.2/char/char067203/char067203.skel?library=F%3A%2FAssets'), {
+    illustration: 'illust_char067203_230', resource: 'novel_background_76', id: 76,
+  })
 })
 
 test('local Mod filenames and library URLs resolve to the same illustration', () => {
@@ -28,9 +31,9 @@ test('skill, dating, NPC, unknown and malformed resources never borrow another c
   ]) assert.equal(findIllustrationBackground(filename), null, filename)
 })
 
-test('the extracted snapshot contains 207 complete mappings and records its official source', () => {
-  assert.equal(Object.keys(mapping.backgrounds).length, 207)
-  assert.equal(Object.keys(mapping.skeletons).length, 207)
+test('the extracted snapshot contains 208 complete mappings and records its official source', () => {
+  assert.equal(Object.keys(mapping.backgrounds).length, 208)
+  assert.equal(Object.keys(mapping.skeletons).length, 208)
   assert.equal(mapping.source.backgroundTable, 'CostumeDesignConceptInfoTable')
   assert.equal(mapping.source.backgroundField, 'CostumeBgResoureceName')
   for (const [illustration, background] of Object.entries(mapping.backgrounds)) {

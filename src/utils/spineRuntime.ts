@@ -29,7 +29,7 @@ function parseSpineJson(data: ArrayBuffer) {
 
 export async function readSpineSource(path: string, raw?: Record<string, string>) {
 	const response = await fetch(raw?.[path] ?? path);
-	if (!response.ok) throw new Error(`${response.status} ${response.statusText}: ${path}`);
+	if (!response.ok) throw new Error(`HTTP ${response.status} ${response.statusText}: ${path}`);
 	const bytes = await response.arrayBuffer();
 	const json = /\.json(?:[?#]|$)/i.test(path);
 	const version = readSpineVersion(bytes, json);

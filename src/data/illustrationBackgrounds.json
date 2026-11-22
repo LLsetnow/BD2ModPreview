@@ -8,7 +8,10 @@
     "join": "CostumeDesignTable.Id = CostumeDesignConceptInfoTable.Id",
     "commonSha256": "7cbb7275a9fc137592b01383113381f18d209903d34963bdd70c9ad0d5b666ba",
     "assemblySha256": "35d67a3f7c420d8975a49a84ab08b35ff055e91ccaec20c797d9e5eb7c4afe50",
-    "skeletonField": "PrefabName"
+    "skeletonField": "PrefabName",
+    "updates": [
+      {"costumeDesignId":67203,"commonSha256":"47c513cd813f22d0594962cd57fa958e0d5dc1eef7a982e68fdc2c4f76db0a71","assemblySha256":"c97848b4987e0189db1264b30eb87c6a1e46bd1d671a7e056a550b51b88ce210"}
+    ]
   },
   "backgrounds": {
     "illust_char000101_1": "novel_background_160",
@@ -198,6 +201,7 @@
     "illust_char067104_206": "novel_background_135",
     "illust_char067201_129": "novel_background_76",
     "illust_char067202_147": "novel_background_62",
+    "illust_char067203_230": "novel_background_76",
     "illust_char067301_132": "novel_background_139",
     "illust_char067302_139": "novel_background_0",
     "illust_char067303_154": "novel_background_2",
@@ -407,6 +411,7 @@
     "char067104": "illust_char067104_206",
     "char067201": "illust_char067201_129",
     "char067202": "illust_char067202_147",
+    "char067203": "illust_char067203_230",
     "char067301": "illust_char067301_132",
     "char067302": "illust_char067302_139",
     "char067303": "illust_char067303_154",

@@ -3,9 +3,10 @@ use sha2::{Digest, Sha256};
 use std::{fs, path::{Path, PathBuf}, time::Duration};
 use tauri::Manager;
 
-const SOURCES: [&str; 2] = [
+const SOURCES: [&str; 3] = [
     "https://cdn.jsdelivr.net/gh/LLsetnow/Brown-Dust-2-Asset@master/backgrounds/cutscene/",
     "https://raw.githubusercontent.com/LLsetnow/Brown-Dust-2-Asset/master/backgrounds/cutscene/",
+    "https://raw.githubusercontent.com/bruhnn/Brown-Dust-2-Asset/master/backgrounds/cutscene/",
 ];
 
 fn asset_root(app: &tauri::AppHandle) -> Result<PathBuf, String> {

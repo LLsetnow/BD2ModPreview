@@ -14,12 +14,14 @@ import { useGameCutscene } from "./useGameCutscene";
 import { useGameBackgroundStore } from "../stores/gameBackgrounds";
 import { useIllustrationBackground } from "./useIllustrationBackground";
 import { useAssetLibraryStore } from '../stores/assetLibrary';
+import { spineAssetCandidates } from '../utils/assetLibraryUrls';
 import { useMinigameInteractions } from "./useMinigameInteractions";
 import { useDatingInteractions } from "./useDatingInteractions";
 import { useStandingInteractions } from "./useStandingInteractions";
 import type {
 	SpineAssetsData,
 	SpinePlayer,
+	SpineSource,
 	AnimationSequence,
 	AudioAsset,
 	LoadStep,
@@ -1006,48 +1008,46 @@ export function usePreview(
 	}
 
 	async function loadSpineFromUrl(
-		skeletonUrl: string,
-		atlasUrl: string,
+		source: Extract<SpineSource, { type: 'url' }>,
 		request: number,
-		fallbackSkeleton?: string,
-		fallbackAtlas?: string,
 	) {
 		await library.ready();
-		if (request !== loadId) return;
-		const assets = {
-			skeletonFilename: library.url(skeletonUrl),
-			atlasFilename: library.url(atlasUrl),
-		};
-		const config = createPlayerConfig(assets);
+		const attempts = spineAssetCandidates(source).map(({ skeletonUrl, atlasUrl }) => ({
+			skeletonUrl, atlasUrl,
+			assets: { skeletonFilename: library.url(skeletonUrl), atlasFilename: library.url(atlasUrl) },
+		}));
+		const unique = [...new Map(attempts.map(attempt => [
+			JSON.stringify(attempt.assets), attempt,
+		])).values()];
 
-		config.error = async (_player: SpinePlayer, message: string) => {
+		async function loadCandidate(index: number): Promise<void> {
 			if (request !== loadId) return;
-			loadResults.push(...describeLoadError(message, "online", skeletonUrl));
+			const { skeletonUrl, atlasUrl, assets } = unique[index]!;
+			const config = createPlayerConfig(assets);
 
-			logMessage(
-				JSON.stringify({
-					results: loadResults,
-					skeletonUrl,
-					atlasUrl,
-					message,
-				}),
-				"error",
-			);
-
-			if (fallbackSkeleton && fallbackAtlas) {
+			config.error = async (_player: SpinePlayer, message: string) => {
+				if (request !== loadId) return;
+				loadResults.push(...describeLoadError(message, "online", skeletonUrl));
+				logMessage(JSON.stringify({ results: loadResults, skeletonUrl, atlasUrl, message }), "error");
+				if (index + 1 === unique.length) {
+					showError(message, request, true);
+					return;
+				}
 				try {
-					await loadSpineFromUrl(fallbackSkeleton, fallbackAtlas, request);
+					await loadCandidate(index + 1);
 				} catch (error) {
 					showError(error, request);
 				}
-			} else showError(message, request, true);
-		};
+			};
 
-		try {
-			await initializePlayer(config, assets, request);
-		} catch (error) {
-			await config.error(undefined, error instanceof Error ? error.message : String(error));
+			try {
+				await initializePlayer(config, assets, request);
+			} catch (error) {
+				await config.error(undefined, error instanceof Error ? error.message : String(error));
+			}
 		}
+
+		await loadCandidate(0);
 	}
 
 	function createPlayerConfig(assetsData: SpineAssetsData) {
@@ -1586,13 +1586,7 @@ export function usePreview(
 				if (source.type === "folder") {
 					await loadSpineFromFolder(source.path, request);
 				} else {
-					await loadSpineFromUrl(
-						source.skeletonUrl,
-						source.atlasUrl,
-						request,
-						source.skeletonUrlFallback,
-						source.atlasUrlFallback,
-					);
+					await loadSpineFromUrl(source, request);
 				}
 			} catch (error) {
 				showError(error, request);

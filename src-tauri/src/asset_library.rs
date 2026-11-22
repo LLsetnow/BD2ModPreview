@@ -46,7 +46,7 @@ fn relative_path(encoded: &str) -> Result<String, String> {
     let path = path.trim_start_matches('/');
     if path.is_empty() || path.contains('\\') || path.contains(':')
         || !Path::new(path).components().all(|part| matches!(part, Component::Normal(_)))
-        || !["spine/", "ui/", "audio/", "backgrounds/"].iter().any(|prefix| path.starts_with(prefix)) {
+        || !["spine/", "spine-4.2/", "ui/", "audio/", "backgrounds/"].iter().any(|prefix| path.starts_with(prefix)) {
         return Err("Invalid asset path".into());
     }
     Ok(path.into())
@@ -124,10 +124,6 @@ pub async fn serve(root: Option<PathBuf>, encoded: String) -> Response<Vec<u8>> 
         Err(error) => return response(500, "text/plain", error.to_string().into_bytes()),
         _ => {},
     }
-    // Standing and skill audio are supplied by the selected local library. Missing clips must fail promptly.
-    if relative.starts_with("audio/char/") || relative.starts_with("audio/cutscene/") {
-        return response(404, "text/plain", format!("Local audio not found: {relative}").into_bytes());
-    }
     let client = reqwest::Client::builder().timeout(Duration::from_secs(30)).build().unwrap_or_default();
     for base in ["https://cdn.jsdelivr.net/gh/LLsetnow/Brown-Dust-2-Asset@master/", "https://raw.githubusercontent.com/LLsetnow/Brown-Dust-2-Asset/refs/heads/master/"] {
         if let Ok(remote) = client.get(format!("{base}{relative}")).send().await {
@@ -160,7 +156,8 @@ mod tests {
     use super::*;
     #[test] fn rejects_traversal_and_decodes_asset_names() {
         assert_eq!(relative_path("/spine/char/test/texture%20page.png").unwrap(), "spine/char/test/texture page.png");
-        for path in ["/spine/../private.png", "/spine/%2e%2e/private.png", "/ui/%5c..%5cprivate.png", "/C:/private.png", "/other/file.png"] { assert!(relative_path(path).is_err(), "{path}"); }
+        assert_eq!(relative_path("/spine-4.2/char/char067203/char067203.skel").unwrap(), "spine-4.2/char/char067203/char067203.skel");
+        for path in ["/spine/../private.png", "/spine/%2e%2e/private.png", "/spine-4.2/%2e%2e/private.png", "/ui/%5c..%5cprivate.png", "/C:/private.png", "/other/file.png"] { assert!(relative_path(path).is_err(), "{path}"); }
         assert!(mime("spine/test.exe").is_none());
     }
     #[test] fn local_assets_are_read_without_changing_the_repository() {
