@@ -1,6 +1,7 @@
 import { computed, ref, watch, type Ref } from 'vue'
 import type { PreviewBackground } from '../stores/previewer'
 import { useAssetLibraryStore } from '../stores/assetLibrary'
+import { useAssetCatalogStore } from '../stores/assetCatalog'
 import { loadNovelBackground } from '../data/novelBackgrounds'
 import { findIllustrationBackground } from '../utils/illustrationBackground'
 
@@ -10,8 +11,9 @@ export function useIllustrationBackground(
   warn: (message: string) => void,
 ) {
   const library = useAssetLibraryStore()
+  const catalog = useAssetCatalogStore()
   const filename = ref('')
-  const info = computed(() => findIllustrationBackground(filename.value))
+  const info = computed(() => findIllustrationBackground(filename.value, catalog.catalog?.illustrationBackgrounds))
   const image = ref('')
   const loading = ref(false)
 

@@ -1,8 +1,10 @@
 import { onScopeDispose, watch } from "vue";
 import { useUIStore } from "../stores/ui";
+import { useAssetLibraryStore } from "../stores/assetLibrary";
 
 export function useMinigameAudio() {
 	const ui = useUIStore();
+	const library = useAssetLibraryStore();
 	const buffers = new Map<string, AudioBuffer>();
 	const playing = new Set<AudioBufferSourceNode>();
 	let context: AudioContext | null = null;
@@ -25,7 +27,7 @@ export function useMinigameAudio() {
 		const audioContext = context;
 		for (const url of urls) {
 			try {
-				const response = await fetch(url);
+				const response = await fetch(library.localUrl(url));
 				if (!response.ok) throw new Error(`HTTP ${response.status}`);
 				const buffer = await audioContext.decodeAudioData(
 					await response.arrayBuffer(),

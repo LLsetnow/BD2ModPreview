@@ -3,18 +3,7 @@ import { defineStore } from "pinia";
 import { Character, LocalizedName } from "../types/character";
 import { useI18n } from "vue-i18n"
 import { useLogger } from "../composables/useLogger";
-
-function compareVersions(a: string, b: string): number {
-	const v1 = a.split(".").map(Number);
-	const v2 = b.split(".").map(Number);
-
-	for (let i = 0; i < Math.max(v1.length, v2.length); i++) {
-		const diff = (v1[i] ?? 0) - (v2[i] ?? 0);
-		if (diff !== 0) return Math.sign(diff);
-	}
-
-	return 0;
-}
+import { useAssetLibraryStore } from "./assetLibrary";
 
 interface CharactersJson {
 	version: string;
@@ -24,14 +13,10 @@ interface CharactersJson {
 
 type DatingMap = Record<string, string>;
 
-const CHARACTERS_URL =
-	"https://cdn.jsdelivr.net/gh/bruhnn/BD2ModManager@main/src-tauri/data/characters.json";
-
 export const useCharactersStore = defineStore("characters", () => {
 	const { logMessage } = useLogger();
 	const { locale } = useI18n()
-
-	const currentVersionLoaded: string | null = null;
+	const library = useAssetLibraryStore()
 
 	const characters = shallowRef<Character[]>([]);
 	const datingMap = shallowRef<DatingMap>({});
@@ -56,88 +41,23 @@ export const useCharactersStore = defineStore("characters", () => {
 	}
 
 	async function loadCharacters() {
-		await loadLocalCharacters();
-
-		loadRemoteCharacters()
-			.then((success) => {
-				if (success) {
-					logMessage(
-						"Characters loaded successfully from remote repository",
-						"info",
-					);
-				} else {
-					logMessage(
-						"Failed to load characters from remote repository, using local data",
-						"warning",
-					);
+		await library.ready()
+		for (const url of [library.localUrl("characters.json"), "/data/characters.json"]) {
+			try {
+				const response = await fetch(url, { cache: "no-store", signal: AbortSignal.timeout(15000) })
+				if (!response.ok) throw new Error(`HTTP ${response.status}`)
+				const data: CharactersJson = await response.json()
+				if (typeof data.version !== "string" || !Array.isArray(data.characters) ||
+					!data.dating || typeof data.dating !== "object" || Array.isArray(data.dating)) {
+					throw new Error("Invalid characters.json catalog")
 				}
-			})
-			.catch((error) => {
-				logMessage(`Error loading characters: ${error}`, "error");
-			});
-	}
-
-	async function loadLocalCharacters() {
-		try {
-			const response = await fetch("/data/characters.json");
-			if (!response.ok) {
-				throw new Error(`HTTP error! status: ${response.status}`);
+				characters.value = data.characters
+				datingMap.value = data.dating
+				return
+			} catch (error) {
+				logMessage(`Could not read character catalog from ${url}: ${error}`, "warning")
 			}
-
-			const data = (await response.json()) as CharactersJson;
-
-			const existingIds = new Set(characters.value.map((c) => c.id));
-			const newCharacters = data.characters.filter(
-				(c) => !existingIds.has(c.id),
-			);
-
-			characters.value = [...characters.value, ...newCharacters];
-			datingMap.value = { ...datingMap.value, ...data.dating };
-
-			console.log("Local characters loaded:", data.characters.length);
-		} catch (error) {
-			console.error(
-				"Failed to load characters from public folder:",
-				error,
-			);
 		}
-	}
-
-	async function loadRemoteCharacters() {
-		try {
-			const response = await fetch(CHARACTERS_URL, {
-				method: "GET",
-				cache: "no-store",
-			});
-			if (!response.ok) {
-				throw new Error(`HTTP error! status: ${response.status}`);
-			}
-
-			const data = (await response.json()) as CharactersJson;
-
-			if (
-				!compareVersions(
-					data["version"],
-					currentVersionLoaded ?? "0.0.0",
-				)
-			) {
-				return;
-			}
-
-			characters.value = data.characters;
-			datingMap.value = data.dating;
-
-			console.log("Remote characters loaded:", data.characters.length);
-
-			return true;
-		} catch (error) {
-			console.error(
-				`Failed to load characters from ${CHARACTERS_URL}:`,
-				error,
-			);
-		}
-
-		return false;
 	}
 
 	return {

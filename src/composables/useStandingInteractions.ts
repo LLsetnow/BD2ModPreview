@@ -2,6 +2,7 @@ import { computed, onScopeDispose, ref, watch } from 'vue'
 import type { SpinePlayer } from '../types/spine'
 import type { StandingVoiceCatalog, StandingVoiceClip, StandingVoiceLanguage } from '../types/standing'
 import { useAssetLibraryStore } from '../stores/assetLibrary'
+import { useAssetCatalogStore } from '../stores/assetCatalog'
 import { useUIStore } from '../stores/ui'
 import { useLogger } from './useLogger'
 import { standingSkeleton, containsTriangle } from '../utils/standingInteractions'
@@ -11,6 +12,7 @@ const catalogs = new Map<string, Promise<StandingVoiceCatalog>>()
 
 export function useStandingInteractions(options: { canInteract: () => boolean; beforePlay: () => void; isPaused: () => boolean; isSlotVisible: (name: string) => boolean }) {
   const library = useAssetLibraryStore()
+  const catalog = useAssetCatalogStore()
   const ui = useUIStore()
   const { logMessage } = useLogger()
   const available = ref(false)
@@ -190,7 +192,7 @@ export function useStandingInteractions(options: { canInteract: () => boolean; b
   }
 
   function load(value: SpinePlayer, filename: string) {
-    clear(); player = value; skeletonId = standingSkeleton(filename)
+    clear(); player = value; skeletonId = standingSkeleton(filename, catalog.catalog?.illustrationBackgrounds.skeletons)
     const names: string[] = value.skeleton.data.animations.map((animation: any) => animation.name)
     idle = names.includes('idle') ? 'idle' : names.find(name => /^idle\d*$/i.test(name)) ?? ''
     motion = names.includes('motion') ? 'motion' : names.find(name => /^(motion|touch|tap)\d*$/i.test(name)) ?? ''

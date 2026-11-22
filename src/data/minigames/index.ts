@@ -1,29 +1,49 @@
-import rhythmHit from "../../assets/audio/minigames/rhythm-hit.ogg"
-import rhythmFever from "../../assets/audio/minigames/rhythm-fever.ogg"
+import type { MinigameCatalogEntry } from '../../stores/assetCatalog'
 
-export type MinigameAction = "tap" | "hold" | "release" | "slide"
+export type MinigameAction = 'tap' | 'hold' | 'release' | 'slide'
 
 export interface MinigameDefinition {
   id: string
-  sounds?: Partial<Record<MinigameAction | "fever", string>>
+  sounds?: Partial<Record<MinigameAction | 'fever', string>>
   characters: (animations: string[]) => string[]
   idle: (character: string, fever: boolean) => string
   reactions: (action: MinigameAction, left: boolean, fever: boolean) => string[]
 }
 
-export const minigames: MinigameDefinition[] = [{
-  id: "rhythm",
-  sounds: { tap: rhythmHit, hold: rhythmHit, slide: rhythmHit, fever: rhythmFever },
-  characters: animations => animations.filter(name => /^_char\d{3}$/.test(name)).sort(),
-  idle: (character, fever) => character + (fever ? "fever" : ""),
-  reactions: (action, left, fever) => {
-    const side = left ? "l" : "r"
-    if (fever) return action === "tap" ? Array.from({ length: 5 }, (_, i) => `_fever_${side}_${i}`) : []
-    switch (action) {
-      case "tap": return ["", "_1", "_2"].map(suffix => `_hit1_${side}${suffix}`)
-      case "hold": return [`_hit2start_${side}`]
-      case "release": return [`_hit2end_${side}`]
-      case "slide": return [`_hit3_${side}`]
-    }
-  },
-}]
+function expand(template: string, values: Record<string, string | number>) {
+  return template.replace(/\{([A-Za-z][A-Za-z0-9]*)(?::(\d+))?\}/g, (_match, key: string, width?: string) => {
+    const value = String(values[key] ?? '')
+    return width ? value.padStart(Math.min(16, Number(width)), '0') : value
+  })
+}
+
+export function minigameCharacterAnimation(config: MinigameCatalogEntry, id: number) {
+  return expand(config.animations.characterNameTemplate, { characterId: id })
+}
+
+export function createMinigameDefinition(config: MinigameCatalogEntry): MinigameDefinition {
+  let characterPattern: RegExp
+  try { characterPattern = new RegExp(config.animations.characterPattern) }
+  catch { characterPattern = /$a/ }
+
+  return {
+    id: config.id,
+    sounds: config.sounds as MinigameDefinition['sounds'],
+    characters: animations => config.characters
+      .map(({ id }) => minigameCharacterAnimation(config, id))
+      .filter(name => characterPattern.test(name) && animations.includes(name)),
+    idle: (character, fever) => expand(config.animations.idleTemplate, {
+      character,
+      feverSuffix: fever ? config.animations.feverIdleSuffix ?? '' : '',
+    }),
+    reactions: (action, left, fever) => {
+      const side = left ? 'l' : 'r'
+      const configured = fever ? config.animations.reactions.fever : config.animations.reactions[action]
+      if (!configured) return []
+      if (Array.isArray(configured)) return configured.map(template => expand(template, { side }))
+      if (action !== 'tap' || typeof configured !== 'object' || !('tap' in configured) || !('count' in configured)) return []
+      const count = Math.max(0, Math.min(100, Number(configured.count) || 0))
+      return Array.from({ length: count }, (_, index) => expand(configured.tap, { side, index }))
+    },
+  }
+}

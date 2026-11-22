@@ -43,6 +43,7 @@ export const useModManagerStore = defineStore("modManager", () => {
   }
 
   async function initialize() {
+    await assetLibrary.initialize()
     listeners.push(await listen<ManagerState>("bd2mm::state", ({ payload }) => {
       mods.value = payload.mods;
       const directory = payload.assetLibraryDirectory?.trim() ?? ''

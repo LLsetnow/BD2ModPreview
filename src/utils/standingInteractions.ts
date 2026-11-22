@@ -1,12 +1,10 @@
-import illustrationMapping from '../data/illustrationBackgrounds.json' with { type: 'json' }
+import fallbackMapping from '../data/illustrationBackgrounds.json' with { type: 'json' }
 
-const illustrations = new Map(Object.entries(illustrationMapping.skeletons).map(([skeleton, illustration]) => [illustration.toLowerCase(), skeleton]))
-
-export function standingSkeleton(filename: string): string | null {
+export function standingSkeleton(filename: string, skeletons: Record<string, string> = fallbackMapping.skeletons): string | null {
   try {
     const name = decodeURIComponent(filename.split(/[?#]/)[0]!).split(/[\\/]/).pop()!.replace(/\.(skel|json)$/i, '').toLowerCase()
     if (/^char\d{6}$/.test(name)) return name
-    return illustrations.get(name) ?? null
+    return Object.entries(skeletons).find(([, illustration]) => illustration.toLowerCase() === name)?.[0] ?? null
   } catch { return null }
 }
 

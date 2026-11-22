@@ -41,12 +41,20 @@ pub fn set_asset_library_root(state: tauri::State<AssetLibrary>, directory: Stri
     state.set_root(&directory)
 }
 
+#[tauri::command]
+pub fn get_shared_asset_library_root() -> Option<String> {
+    let directory = PathBuf::from(std::env::var_os("APPDATA")?).join("LLsetnow").join("BD2AssetLibrary");
+    let value = fs::read_to_string(directory.join("root.txt")).ok()?;
+    Path::new(value.trim()).is_absolute().then(|| value.trim().to_owned())
+}
+
 fn relative_path(encoded: &str) -> Result<String, String> {
     let path = percent_decode_str(encoded).decode_utf8().map_err(|_| "Invalid asset path")?;
     let path = path.trim_start_matches('/');
     if path.is_empty() || path.contains('\\') || path.contains(':')
         || !Path::new(path).components().all(|part| matches!(part, Component::Normal(_)))
-        || !["spine/", "spine-4.2/", "ui/", "audio/", "backgrounds/"].iter().any(|prefix| path.starts_with(prefix)) {
+        || !(matches!(path, "catalog-manifest.json" | "characters.json" | "index.json" | "modmanager.json" | "modpreview.json")
+            || ["spine/", "spine-4.2/", "ui/", "audio/", "backgrounds/"].iter().any(|prefix| path.starts_with(prefix))) {
         return Err("Invalid asset path".into());
     }
     Ok(path.into())
@@ -116,16 +124,43 @@ pub async fn serve(root: Option<PathBuf>, encoded: String) -> Response<Vec<u8>> 
     let relative = match relative_path(&encoded) { Ok(path) => path, Err(error) => return response(400, "text/plain", error.into_bytes()) };
     let Some(content_type) = mime(&relative) else { return response(400, "text/plain", b"Unsupported asset type".to_vec()) };
     let Some(root) = root else { return response(503, "text/plain", b"Asset library is not configured".to_vec()) };
+    // Manager installs these catalogs together after choosing the game version.
+    // An individual Preview request must never replace one with a newer file.
+    let manager_catalog = matches!(relative.as_str(),
+        "catalog-manifest.json" | "characters.json" | "index.json" | "modmanager.json" | "modpreview.json"
+        | "audio/char/index.json" | "audio/cutscene/index.json" | "audio/dating/index.json");
     let local_relative = relative.clone();
     let local_root = root.clone();
-    match tauri::async_runtime::spawn_blocking(move || read_local(&local_root, &local_relative)).await {
+    match tauri::async_runtime::spawn_blocking(move || -> Result<Option<Vec<u8>>, String> {
+        let Some(bytes) = read_local(&local_root, &local_relative)? else { return Ok(None); };
+        if manager_catalog && local_relative != "catalog-manifest.json" {
+            if let Some(manifest) = read_local(&local_root, "catalog-manifest.json")? {
+                use sha2::{Digest, Sha256};
+                let manifest: serde_json::Value = serde_json::from_slice(&manifest).map_err(|e| e.to_string())?;
+                let checksum = manifest["files"].as_array().and_then(|files| files.iter()
+                    .find(|file| file["path"].as_str() == Some(local_relative.as_str())))
+                    .and_then(|file| file["sha256"].as_str());
+                let actual = hex::encode(Sha256::digest(&bytes));
+                if !checksum.is_some_and(|expected| expected.eq_ignore_ascii_case(&actual)) {
+                    return Ok(None);
+                }
+            }
+        }
+        Ok(Some(bytes))
+    }).await {
         Ok(Ok(Some(bytes))) => return response(200, content_type, bytes),
         Ok(Err(error)) => return response(403, "text/plain", error.into_bytes()),
         Err(error) => return response(500, "text/plain", error.to_string().into_bytes()),
         _ => {},
     }
+    if manager_catalog && !matches!(relative.as_str(), "audio/char/index.json" | "audio/cutscene/index.json" | "audio/dating/index.json") {
+        return response(404, "text/plain", format!("Asset catalog has not been installed: {relative}").into_bytes());
+    }
+    if manager_catalog && root.join("catalog-manifest.json").exists() {
+        return response(404, "text/plain", format!("Asset catalog is pending an update: {relative}").into_bytes());
+    }
     let client = reqwest::Client::builder().timeout(Duration::from_secs(30)).build().unwrap_or_default();
-    for base in ["https://cdn.jsdelivr.net/gh/LLsetnow/Brown-Dust-2-Asset@master/", "https://raw.githubusercontent.com/LLsetnow/Brown-Dust-2-Asset/refs/heads/master/"] {
+    for base in ["https://raw.githubusercontent.com/LLsetnow/Brown-Dust-2-Asset/refs/heads/master/", "https://cdn.jsdelivr.net/gh/LLsetnow/Brown-Dust-2-Asset@master/"] {
         if let Ok(remote) = client.get(format!("{base}{relative}")).send().await {
             if remote.status().is_success() && remote.content_length().unwrap_or(0) <= 64 * 1024 * 1024 {
                 if let Ok(bytes) = remote.bytes().await {

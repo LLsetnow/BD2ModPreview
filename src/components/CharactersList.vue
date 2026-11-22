@@ -13,11 +13,12 @@ import { useLogger } from '../composables/useLogger'
 import { usePreviewerStore } from '../stores/previewer'
 import { useCharactersStore } from '../stores/characters'
 import { useAssetLibraryStore } from '../stores/assetLibrary'
+import { useAssetCatalogStore } from '../stores/assetCatalog'
+import { minigameCharacterAnimation } from '../data/minigames'
 import NoInternetState from './NoInternetState.vue'
 import { useNetworkStatus } from '../composables/useNetworkStatus'
 import { Character } from '../types/character'
-import datingAssets from '../data/dating-assets.json'
-import { minigameCatalog, type MinigameEntry } from '../data/minigames/catalog'
+import fallbackDatingAssets from '../data/dating-assets.json'
 
 import { useI18n } from 'vue-i18n'
 
@@ -43,9 +44,21 @@ const { logMessage } = useLogger()
 const previewerStore = usePreviewerStore()
 const charactersStore = useCharactersStore()
 const library = useAssetLibraryStore()
+const assetCatalog = useAssetCatalogStore()
 
 const draggedCharacter = ref<Character | null>(null)
-type MinigameCard = MinigameEntry & { character: Character; title: string; thumbnail: string }
+type MinigameCard = {
+	id: number
+	gameId: string
+	name: string
+	skeleton: string
+	atlas: string
+	animation: string
+	costumeId: string
+	character: Character
+	title: string
+	thumbnail: string
+}
 const draggedMinigame = ref<MinigameCard | null>(null)
 const dragCard = ref({ width: 0, height: 0, x: 0, y: 0, imageWidth: '', imageHeight: '', imageTransform: '', shadow: '' })
 
@@ -118,13 +131,17 @@ const filteredCharacters = computed(() => {
 
 const filteredMinigames = computed(() => {
 	const search = searchValue.value.trim().toLowerCase()
-	const items = minigameCatalog.flatMap(game => {
-		const character = charactersStore.characters.find(char => char.costume_id === game.costumeId)
+	const items = (assetCatalog.catalog?.minigames ?? []).flatMap(game => game.characters.flatMap(entry => {
+		const character = charactersStore.characters.find(char => char.costume_id === entry.costumeId)
 		if (!character) return []
 		const title = `${charactersStore.getLocalizedName(character.character_name)} - ${charactersStore.getLocalizedName(character.costume_name)}`
 		const thumbnail = library.url(`https://cdn.jsdelivr.net/gh/LLsetnow/Brown-Dust-2-Asset@master/ui/illust/illust_inven_char/${character.assets.character_image}`)
-		return `${title} ${game.name}`.toLowerCase().includes(search) ? [{ ...game, character, title, thumbnail }] : []
-	})
+		const animation = minigameCharacterAnimation(game, entry.id)
+		return `${title} ${game.name}`.toLowerCase().includes(search) ? [{
+			id: entry.id, gameId: game.id, name: game.name, skeleton: game.skeleton, atlas: game.atlas,
+			animation, costumeId: entry.costumeId, character, title, thumbnail,
+		}] : []
+	}))
 	if (sortValue.value === 'a-z') items.sort((a, b) => a.title.localeCompare(b.title))
 	else if (sortValue.value === 'z-a') items.sort((a, b) => b.title.localeCompare(a.title))
 	else items.sort((a, b) => {
@@ -168,19 +185,17 @@ function getCharacterUrl(character: Character, type: keyof typeof ENDPOINTS): { 
 
 	switch (type) {
 		case 'standing': {
-			filename = `char${character.id}/char${character.id}`
+			filename = character.assets.standing_skeleton ?? `char${character.id}/char${character.id}`
 			break
 		}
 		case 'cutscene': {
-			const filenames: Record<string, string> = {
-				'061092': 'cutscene_char061092_a/cutscene_char061092_a',
-			}
-			filename = filenames[character.id] ?? `cutscene_char${character.id}/cutscene_char${character.id}`
+			filename = character.assets.cutscene_skeleton ?? `cutscene_char${character.id}/cutscene_char${character.id}`
 			break
 		}
 		case 'dating': {
 			const name = `illust_dating${character.dating_id}`
-			const skeleton = (datingAssets as Record<string, string[]>)[name]?.[0] ?? name
+			const assets = assetCatalog.catalog?.datingAssets ?? (fallbackDatingAssets as Record<string, string[]>)
+			const skeleton = assets[name]?.[0] ?? name
 			filename = `${skeleton}/${skeleton}`
 			break
 		}
@@ -234,7 +249,7 @@ function getThumbnail(character: Character) {
 
 	if (!imageKey || !character.assets[imageKey.image]) {
 		logMessage(`Invalid Character Data. Could not find image for ${charactersStore.getLocalizedName(character.character_name)} - ${charactersStore.getLocalizedName(character.costume_name)} (${character.id}) ${typeSelected.value} type.`, "error")
-		return library.url(`${baseUrl}/illust_simple_char/illust_simple_char000201_2.png`)
+		return
 	}
 	// standind and dating show the character image
 	// cutscene shows the skill preview image
@@ -367,8 +382,8 @@ onMounted(async () => {
 				<template v-else-if="typeSelected === 'minigames'">
 					<div v-if="!filteredMinigames.length" class="characters-empty">{{ t('characterList.noCharactersFound') }}</div>
 					<div v-else class="character-grid">
-						<div v-for="game in filteredMinigames" :key="game.id" class="character-card"
-							:class="{ dragging: isDragging && hasDragged && draggedMinigame?.id === game.id }"
+						<div v-for="game in filteredMinigames" :key="`${game.gameId}:${game.id}`" class="character-card"
+							:class="{ dragging: isDragging && hasDragged && draggedMinigame?.gameId === game.gameId && draggedMinigame?.id === game.id }"
 							role="button" tabindex="0" @click="!hasDragged && minigameClicked(game)"
 							@keydown.enter.prevent="minigameClicked(game)" @keydown.space.prevent="minigameClicked(game)"
 							@pointerdown.prevent="startMinigameDrag($event, game)" @pointermove="moveDrag"
