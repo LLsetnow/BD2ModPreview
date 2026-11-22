@@ -40,9 +40,17 @@ export function useGameCutsceneAudio(getTime: () => number) {
       await library.ready()
       if (current !== generation) return
       if (!library.activeRoot) { status.value = 'missing'; return }
-      const response = await fetch(library.localUrl('audio/cutscene/timelines/' + loadedId + '.json'), { signal })
-      if (current !== generation) return
-      if (response.status === 404) { status.value = 'missing'; return }
+      const timelinePaths = [
+        'audio/cutscene/timelines/' + loadedId + '.json',
+        'audio/cutscene/timelines/spine-4.2/' + loadedId + '.json',
+      ]
+      let response: Response | undefined
+      for (const path of timelinePaths) {
+        response = await fetch(library.localUrl(path), { signal })
+        if (current !== generation) return
+        if (response.status !== 404) break
+      }
+      if (!response || response.status === 404) { status.value = 'missing'; return }
       if (!response.ok) throw new Error('Skill timeline HTTP ' + response.status)
       const data: SkillAudioTimeline = await response.json()
       if (!validSkillAudioTimeline(data) || data.cutsceneId !== loadedId) throw new Error('Invalid skill audio timeline')
